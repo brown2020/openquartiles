@@ -58,8 +58,6 @@ git clone https://github.com/brown2020/openquartiles.git
 cd openquartiles
 ```
 
-````
-
 2. Install dependencies:
 
 ```bash
@@ -158,4 +156,3 @@ You can deploy your own version of OpenQuartiles to Vercel with one click:
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbrown2020%2Fopenquartiles&env=OPENAI_API_KEY)
 
 Remember to add your OpenAI API key to the environment variables in your Vercel project settings.
-````
