@@ -14,7 +14,7 @@ export async function getThemeWords(theme: string): Promise<GameWords> {
   while (retries < MAX_RETRIES) {
     try {
       const openai = createOpenAI();
-      const model = openai("gpt-4o");
+      const model = openai("gpt-4.1");
 
       // Simplified prompt to be more direct
       const { text } = await generateText({
