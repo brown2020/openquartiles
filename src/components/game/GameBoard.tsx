@@ -1,56 +1,140 @@
 // src/components/game/GameBoard.tsx
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { GameChunk, WordData } from "@/lib/types";
+import { motion, AnimatePresence } from 'framer-motion';
+import { Tile } from './Tile';
+import { useGameStore } from '@/stores/gameStore';
+import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
 
-interface GameBoardProps {
-  gameChunks: GameChunk[];
-  selectedChunks: GameChunk[];
-  foundWords: WordData[];
-  onChunkClick: (chunk: GameChunk) => void;
-}
+export function GameBoard() {
+  const { tiles, selectedTileIds, selectTile, deselectTile, foundWords, puzzle } = useGameStore();
+  
+  // Filter to only show available (not used) tiles
+  const availableTiles = tiles.filter(t => !t.isUsed);
+  
+  // Get found quartiles with their chunks
+  const foundQuartiles = foundWords.filter(w => w.isQuartile);
 
-export function GameBoard({
-  gameChunks,
-  selectedChunks,
-  foundWords,
-  onChunkClick,
-}: GameBoardProps) {
-  // Active row with remaining chunks
-  const renderActiveRow = () => (
-    <div className="grid grid-cols-4 gap-2">
-      {gameChunks.map((chunk) => (
-        <Button
-          key={`chunk-${chunk.id}`}
-          variant={selectedChunks.includes(chunk) ? "default" : "outline"}
-          className="h-12"
-          onClick={() => onChunkClick(chunk)}
-        >
-          {chunk.text}
-        </Button>
-      ))}
-    </div>
-  );
+  const handleTileClick = (tileId: string) => {
+    if (selectedTileIds.includes(tileId)) {
+      // Only deselect if it's the last selected tile
+      const lastSelected = selectedTileIds[selectedTileIds.length - 1];
+      if (tileId === lastSelected) {
+        deselectTile(tileId);
+      }
+    } else {
+      selectTile(tileId);
+    }
+  };
 
-  // Found words rows
-  const renderFoundWords = () =>
-    foundWords.map((word, index) => (
-      <div key={index} className="grid grid-cols-4 gap-2">
-        {word.chunks.map((chunk, chunkIndex) => (
-          <div
-            key={`${word.word}-${chunkIndex}`}
-            className="h-12 flex items-center justify-center bg-green-100 rounded-md font-medium"
-          >
-            {chunk}
-          </div>
-        ))}
-      </div>
-    ));
+  // Get chunks for a found word
+  const getChunksForWord = (tileIds: string[]): string[] => {
+    return tileIds.map(id => {
+      const tile = tiles.find(t => t.id === id);
+      return tile?.text || '';
+    });
+  };
 
   return (
-    <div className="space-y-2">
-      {gameChunks.length > 0 && renderActiveRow()}
-      {renderFoundWords()}
-    </div>
+    <motion.div 
+      className="w-full max-w-md mx-auto space-y-2"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.1 }}
+    >
+      {/* Found Quartiles - Completed word rows */}
+      <AnimatePresence>
+        {foundQuartiles.map((word, index) => {
+          const chunks = getChunksForWord(word.tileIds);
+          
+          return (
+            <motion.div
+              key={word.word}
+              initial={{ opacity: 0, scale: 0.9, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ 
+                type: 'spring', 
+                stiffness: 300, 
+                damping: 25,
+                delay: index * 0.1 
+              }}
+              className="relative"
+            >
+              <div className={cn(
+                "grid gap-2 sm:gap-3 p-3 rounded-xl",
+                "bg-gradient-to-r from-emerald-50 to-teal-50",
+                "border-2 border-emerald-300",
+                "shadow-sm"
+              )}
+              style={{ gridTemplateColumns: `repeat(${chunks.length}, 1fr)` }}
+              >
+                {chunks.map((chunk, chunkIndex) => (
+                  <motion.div
+                    key={`${word.word}-${chunkIndex}`}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 + chunkIndex * 0.05 }}
+                    className={cn(
+                      "aspect-square rounded-lg flex items-center justify-center",
+                      "bg-gradient-to-br from-emerald-400 to-teal-500",
+                      "text-white font-bold text-sm sm:text-base",
+                      "shadow-md"
+                    )}
+                  >
+                    {chunk}
+                  </motion.div>
+                ))}
+                
+                {/* Word label */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className={cn(
+                    "absolute -right-2 -top-2",
+                    "flex items-center gap-1 px-2 py-1",
+                    "bg-emerald-500 text-white text-xs font-bold",
+                    "rounded-full shadow-md"
+                  )}
+                >
+                  <Check className="w-3 h-3" />
+                  <span>{word.word}</span>
+                </motion.div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+
+      {/* Active tiles grid */}
+      {availableTiles.length > 0 && (
+        <div className="grid grid-cols-4 gap-2 sm:gap-3 p-4 bg-gradient-to-br from-amber-100/50 to-orange-100/50 rounded-2xl border border-amber-200/30">
+          {availableTiles.map((tile) => {
+            const selectionIndex = selectedTileIds.indexOf(tile.id);
+            return (
+              <Tile
+                key={tile.id}
+                tile={tile}
+                onClick={() => handleTileClick(tile.id)}
+                selectionIndex={selectionIndex >= 0 ? selectionIndex : undefined}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* All complete message */}
+      {availableTiles.length === 0 && foundQuartiles.length === 5 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-6"
+        >
+          <div className="text-4xl mb-2">🎉</div>
+          <div className="text-lg font-bold text-emerald-600">All Quartiles Found!</div>
+        </motion.div>
+      )}
+    </motion.div>
   );
 }
