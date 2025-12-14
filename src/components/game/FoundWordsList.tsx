@@ -115,3 +115,4 @@ function WordGroup({ title, words, color, icon }: WordGroupProps) {
 }
 
 
+
