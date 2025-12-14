@@ -18,6 +18,270 @@ interface AIResponse {
   words: AIWordData[];
 }
 
+// Common English words that might be formed from tile combinations
+// This helps validate shorter words
+const COMMON_WORDS = new Set([
+  // 2-3 letter combinations that are words
+  "TO",
+  "ON",
+  "AT",
+  "IT",
+  "AN",
+  "OR",
+  "AS",
+  "BE",
+  "WE",
+  "ME",
+  "HE",
+  "SO",
+  "NO",
+  "GO",
+  "DO",
+  "THE",
+  "AND",
+  "FOR",
+  "ARE",
+  "BUT",
+  "NOT",
+  "YOU",
+  "ALL",
+  "CAN",
+  "HER",
+  "WAS",
+  "ONE",
+  "OUR",
+  // Sports related
+  "BAT",
+  "BAR",
+  "BET",
+  "RUN",
+  "HIT",
+  "WIN",
+  "TIE",
+  "NET",
+  "SET",
+  "ACE",
+  "BALL",
+  "TEAM",
+  "GAME",
+  "PLAY",
+  "GOAL",
+  "RACE",
+  "KICK",
+  "PASS",
+  "SHOT",
+  "SCORE",
+  "MATCH",
+  "SPORT",
+  "COURT",
+  "FIELD",
+  // Nature related
+  "SUN",
+  "SKY",
+  "SEA",
+  "AIR",
+  "TREE",
+  "LEAF",
+  "RAIN",
+  "SNOW",
+  "WIND",
+  "RIVER",
+  "OCEAN",
+  "STORM",
+  "CLOUD",
+  "EARTH",
+  // Food related
+  "EAT",
+  "CUT",
+  "MIX",
+  "FRY",
+  "BAKE",
+  "COOK",
+  "MEAL",
+  "DISH",
+  "FOOD",
+  "CAKE",
+  "RICE",
+  "MEAT",
+  "FISH",
+  "SOUP",
+  "SALT",
+  // Animals
+  "CAT",
+  "DOG",
+  "BAT",
+  "ANT",
+  "BEE",
+  "COW",
+  "PIG",
+  "HEN",
+  "OWL",
+  "BEAR",
+  "LION",
+  "FISH",
+  "BIRD",
+  "DEER",
+  "FROG",
+  // General common words
+  "ABLE",
+  "ALSO",
+  "BACK",
+  "BEEN",
+  "COME",
+  "DOWN",
+  "EACH",
+  "EVEN",
+  "FIND",
+  "FIRST",
+  "FROM",
+  "GOOD",
+  "GREAT",
+  "HAND",
+  "HAVE",
+  "HERE",
+  "HIGH",
+  "HOME",
+  "INTO",
+  "JUST",
+  "KNOW",
+  "LAST",
+  "LEFT",
+  "LIFE",
+  "LIKE",
+  "LINE",
+  "LITTLE",
+  "LONG",
+  "LOOK",
+  "MADE",
+  "MAKE",
+  "MAN",
+  "MANY",
+  "MAY",
+  "MORE",
+  "MOST",
+  "MUCH",
+  "MUST",
+  "NAME",
+  "NEVER",
+  "NEW",
+  "NEXT",
+  "NOW",
+  "NUMBER",
+  "OFF",
+  "OLD",
+  "ONLY",
+  "OTHER",
+  "OUT",
+  "OVER",
+  "OWN",
+  "PART",
+  "PEOPLE",
+  "PLACE",
+  "POINT",
+  "RIGHT",
+  "SAME",
+  "SAY",
+  "SEE",
+  "SHE",
+  "SIDE",
+  "SMALL",
+  "SOME",
+  "STILL",
+  "SUCH",
+  "TAKE",
+  "TELL",
+  "THAN",
+  "THAT",
+  "THEIR",
+  "THEM",
+  "THEN",
+  "THERE",
+  "THESE",
+  "THEY",
+  "THING",
+  "THINK",
+  "THIS",
+  "THREE",
+  "TIME",
+  "TURN",
+  "UNDER",
+  "USE",
+  "VERY",
+  "WANT",
+  "WAY",
+  "WELL",
+  "WHAT",
+  "WHEN",
+  "WHERE",
+  "WHICH",
+  "WHILE",
+  "WHO",
+  "WHY",
+  "WILL",
+  "WITH",
+  "WORD",
+  "WORK",
+  "WORLD",
+  "WOULD",
+  "WRITE",
+  "YEAR",
+  "YOUR",
+  // Longer common words
+  "ABOUT",
+  "AFTER",
+  "AGAIN",
+  "BEING",
+  "BETWEEN",
+  "BOTH",
+  "CHANGE",
+  "COULD",
+  "DIFFERENT",
+  "DOES",
+  "DURING",
+  "EVERY",
+  "FOUND",
+  "GIVE",
+  "GROUP",
+  "HOUSE",
+  "IMPORTANT",
+  "LARGE",
+  "LATER",
+  "LEARN",
+  "LIVE",
+  "LOCAL",
+  "MOVE",
+  "NEED",
+  "NIGHT",
+  "ORDER",
+  "PLAY",
+  "POSSIBLE",
+  "POWER",
+  "PRESENT",
+  "PROVIDE",
+  "PUBLIC",
+  "QUESTION",
+  "READ",
+  "REAL",
+  "SEEM",
+  "SHOW",
+  "SINCE",
+  "SOMETHING",
+  "SOUND",
+  "START",
+  "STATE",
+  "STUDY",
+  "SYSTEM",
+  "THOUGHT",
+  "THROUGH",
+  "TODAY",
+  "TRUE",
+  "UNTIL",
+  "WATER",
+  "WEEK",
+  "WITHOUT",
+  "YOUNG",
+]);
+
 /**
  * Smart chunk splitting - ensures all chunks are at least 2 letters
  */
@@ -67,6 +331,13 @@ function smartSplitWord(word: string): string[] {
   }
 
   return result;
+}
+
+/**
+ * Check if a word is in our common words list
+ */
+function isCommonWord(word: string): boolean {
+  return COMMON_WORDS.has(word.toUpperCase());
 }
 
 /**
@@ -174,37 +445,107 @@ Just give me 5 words related to "${puzzleTheme}". I will split them into chunks 
 
 /**
  * Build a Puzzle object from validated word data
+ * Also generates valid shorter words from tile combinations
  */
 function buildPuzzleFromWords(theme: string, words: AIWordData[]): Puzzle {
   // Collect all tiles (chunks) from all words
   const tiles: string[] = [];
   const quartiles: ValidWord[] = [];
   const validWords: ValidWord[] = [];
+  const foundWordSet = new Set<string>(); // Prevent duplicates
 
   let tileIndex = 0;
 
+  // First pass: add all quartile words and their tiles
+  const wordTileMap: { word: string; tileIds: string[]; chunks: string[] }[] =
+    [];
+
   words.forEach((wordData) => {
+    const startIndex = tileIndex;
     const tileIds = wordData.chunks.map(() => `tile-${tileIndex++}`);
 
     // Add tiles
     wordData.chunks.forEach((chunk) => tiles.push(chunk));
 
-    // Create the quartile entry
+    // Store for later processing
+    wordTileMap.push({
+      word: wordData.word,
+      tileIds,
+      chunks: wordData.chunks,
+    });
+
+    // Create the quartile entry (4-tile word)
     const quartile: ValidWord = {
       word: wordData.word,
       tileIds,
-      tileCount: wordData.chunks.length as 2 | 3 | 4,
+      tileCount: wordData.chunks.length,
       points:
-        wordData.chunks.length === 4 ? 8 : wordData.chunks.length === 3 ? 4 : 2,
-      isQuartile: wordData.chunks.length === 4,
+        wordData.chunks.length >= 4 ? 8 : wordData.chunks.length === 3 ? 4 : 2,
+      isQuartile: wordData.chunks.length >= 4,
     };
 
     quartiles.push(quartile);
     validWords.push(quartile);
+    foundWordSet.add(wordData.word);
   });
 
+  // Second pass: generate valid shorter words from consecutive tile combinations
+  wordTileMap.forEach(({ chunks, tileIds }) => {
+    const numChunks = chunks.length;
+
+    // Generate 2-tile combinations (consecutive)
+    for (let i = 0; i < numChunks - 1; i++) {
+      const word2 = chunks[i] + chunks[i + 1];
+      if (!foundWordSet.has(word2) && isCommonWord(word2)) {
+        validWords.push({
+          word: word2,
+          tileIds: [tileIds[i], tileIds[i + 1]],
+          tileCount: 2,
+          points: 2,
+          isQuartile: false,
+        });
+        foundWordSet.add(word2);
+      }
+    }
+
+    // Generate 3-tile combinations (consecutive)
+    for (let i = 0; i < numChunks - 2; i++) {
+      const word3 = chunks[i] + chunks[i + 1] + chunks[i + 2];
+      if (!foundWordSet.has(word3) && isCommonWord(word3)) {
+        validWords.push({
+          word: word3,
+          tileIds: [tileIds[i], tileIds[i + 1], tileIds[i + 2]],
+          tileCount: 3,
+          points: 4,
+          isQuartile: false,
+        });
+        foundWordSet.add(word3);
+      }
+    }
+  });
+
+  // Third pass: check for cross-word combinations (tiles from different original words)
+  // Generate all possible 2-tile combinations across all tiles
+  for (let i = 0; i < tiles.length; i++) {
+    for (let j = 0; j < tiles.length; j++) {
+      if (i !== j) {
+        const word2 = tiles[i] + tiles[j];
+        if (!foundWordSet.has(word2) && isCommonWord(word2)) {
+          validWords.push({
+            word: word2,
+            tileIds: [`tile-${i}`, `tile-${j}`],
+            tileCount: 2,
+            points: 2,
+            isQuartile: false,
+          });
+          foundWordSet.add(word2);
+        }
+      }
+    }
+  }
+
   // Calculate max possible score
-  const maxScore = quartiles.reduce((sum, q) => sum + q.points, 0) + 40;
+  const maxScore = validWords.reduce((sum, w) => sum + w.points, 0) + 40;
 
   return {
     id: `ai-puzzle-${Date.now()}`,

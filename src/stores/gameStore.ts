@@ -225,7 +225,7 @@ export const useGameStore = create<GameStore>()(
         if (validWord) {
           const newFoundWord: FoundWord = {
             word: currentWord,
-            tileIds: selectedTileIds,
+            tileIds: [...selectedTileIds],
             tileCount,
             points,
             isQuartile,
@@ -244,12 +244,15 @@ export const useGameStore = create<GameStore>()(
           
           const finalScore = newScore + bonusScore;
           
-          // Mark tiles as used
-          const newTiles = tiles.map(t => 
-            selectedTileIds.includes(t.id) 
-              ? { ...t, isUsed: true, isSelected: false }
-              : t
-          );
+          // Only mark tiles as used for quartiles (4-tile words)
+          // Shorter words score points but don't remove tiles
+          const newTiles = isQuartile 
+            ? tiles.map(t => 
+                selectedTileIds.includes(t.id) 
+                  ? { ...t, isUsed: true, isSelected: false }
+                  : t
+              )
+            : tiles.map(t => ({ ...t, isSelected: false }));
           
           // Check if game is complete (all quartiles found)
           const isComplete = newQuartilesFound === 5;

@@ -14,9 +14,9 @@ export function FoundWordsList() {
   }
 
   // Group words by tile count
-  const quartiles = foundWords.filter(w => w.tileCount === 4);
-  const threeLetters = foundWords.filter(w => w.tileCount === 3);
-  const twoLetters = foundWords.filter(w => w.tileCount === 2);
+  const quartiles = foundWords.filter(w => w.isQuartile || w.tileCount >= 4);
+  const threeLetters = foundWords.filter(w => !w.isQuartile && w.tileCount === 3);
+  const twoLetters = foundWords.filter(w => !w.isQuartile && w.tileCount === 2);
 
   return (
     <motion.div
