@@ -34,12 +34,14 @@ Each generated word:
 
 ## Technology Stack
 
-- Next.js 14 with App Router
+- Next.js 16.0.3 (App Router)
+- React 19
 - TypeScript
-- Tailwind CSS
-- shadcn/ui components
-- OpenAI API
-- Vercel AI SDK
+- Tailwind CSS 4
+- shadcn/ui + Radix UI
+- Zustand
+- Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/rsc`)
+- OpenAI SDK (`openai`)
 - Vercel hosting
 
 ## Local Development
@@ -64,25 +66,19 @@ cd openquartiles
 npm install
 ```
 
-3. Create a `.env.local` file:
-
-```bash
-cp .env.example .env.local
-```
-
-4. Add your OpenAI API key to `.env.local`:
+3. Create a `.env.local` file and add your OpenAI API key:
 
 ```
 OPENAI_API_KEY=your_openai_api_key
 ```
 
-5. Run the development server:
+4. Run the development server:
 
 ```bash
 npm run dev
 ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ### Available Scripts
 
@@ -107,7 +103,7 @@ src/
 │   ├── actions.ts       # Server actions
 │   ├── types.ts         # TypeScript types
 │   └── utils.ts         # Utility functions
-└── styles/              # Global styles
+└── stores/              # Zustand stores
 ```
 
 ## Key Components
@@ -129,7 +125,7 @@ Contributions are welcome! Please follow these steps:
 
 ## License
 
-This project is MIT licensed. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0. See the [LICENSE.md](LICENSE.md) file for details.
 
 ## Contact
 
