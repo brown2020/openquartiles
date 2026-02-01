@@ -489,9 +489,24 @@ function buildPuzzleFromWords(theme: string, words: AIWordData[]): Puzzle {
     foundWordSet.add(wordData.word);
   });
 
-  // Second pass: generate valid shorter words from consecutive tile combinations
+  // Second pass: generate valid shorter words from tile combinations
   wordTileMap.forEach(({ chunks, tileIds }) => {
     const numChunks = chunks.length;
+
+    // Generate 1-tile words (single tiles that are valid words)
+    for (let i = 0; i < numChunks; i++) {
+      const word1 = chunks[i];
+      if (!foundWordSet.has(word1) && isCommonWord(word1)) {
+        validWords.push({
+          word: word1,
+          tileIds: [tileIds[i]],
+          tileCount: 1,
+          points: 1,
+          isQuartile: false,
+        });
+        foundWordSet.add(word1);
+      }
+    }
 
     // Generate 2-tile combinations (consecutive)
     for (let i = 0; i < numChunks - 1; i++) {
@@ -574,31 +589,62 @@ function getFallbackPuzzle(theme: string): Puzzle {
 }
 
 /**
+ * Daily themes - one for each day of the year cycle
+ */
+const DAILY_THEMES = [
+  "nature", "technology", "food", "travel", "science",
+  "sports", "music", "animals", "weather", "ocean",
+  "space", "kitchen", "garden", "holidays", "transportation",
+  "fashion", "architecture", "literature", "mythology", "geography",
+  "history", "medicine", "education", "business", "art",
+  "movies", "television", "books", "games", "photography",
+];
+
+/**
+ * Get today's date string for daily puzzle
+ */
+export function getTodayDateString(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+/**
+ * Get a seeded theme for daily puzzle based on date
+ */
+function getDailyTheme(dateString: string): string {
+  // Simple hash of date string to get consistent daily theme
+  let hash = 0;
+  for (let i = 0; i < dateString.length; i++) {
+    const char = dateString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  const index = Math.abs(hash) % DAILY_THEMES.length;
+  return DAILY_THEMES[index];
+}
+
+/**
+ * Generate the daily puzzle (same for everyone on the same day)
+ */
+export async function generateDailyPuzzle(): Promise<Puzzle> {
+  const today = getTodayDateString();
+  const dailyTheme = getDailyTheme(today);
+
+  const puzzle = await generatePuzzle(dailyTheme);
+
+  // Override with daily-specific ID and date
+  return {
+    ...puzzle,
+    id: `daily-${today}`,
+    date: today,
+    theme: `Daily: ${dailyTheme}`,
+  };
+}
+
+/**
  * Get a random theme for puzzle generation
  */
 function getRandomTheme(): string {
-  const themes = [
-    "nature",
-    "technology",
-    "food",
-    "travel",
-    "science",
-    "sports",
-    "music",
-    "animals",
-    "weather",
-    "ocean",
-    "space",
-    "kitchen",
-    "garden",
-    "holidays",
-    "transportation",
-    "fashion",
-    "architecture",
-    "literature",
-    "mythology",
-    "geography",
-  ];
+  const themes = DAILY_THEMES;
   return themes[Math.floor(Math.random() * themes.length)];
 }
 
