@@ -7,29 +7,28 @@ import { useGameStore } from '@/stores/gameStore';
 import { cn } from '@/lib/utils';
 
 export function ActionButtons() {
-  const { 
-    selectedTileIds, 
-    submitWord, 
-    clearSelection, 
+  const {
+    selectedTileIds,
+    submitWord,
+    clearSelection,
     shuffleTiles,
     useHint,
     hintsUsed,
   } = useGameStore();
 
   const hasSelection = selectedTileIds.length > 0;
-  const canSubmit = selectedTileIds.length >= 2;
+  const canSubmit = selectedTileIds.length >= 1;
 
   const handleHint = () => {
     const hint = useHint();
     if (hint) {
-      // Could show this in a toast or modal
       console.log('Hint:', hint);
     }
   };
 
   return (
-    <motion.div 
-      className="flex items-center justify-center gap-3 sm:gap-4"
+    <motion.div
+      className="flex items-center justify-center gap-2 sm:gap-3"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.2 }}
@@ -40,17 +39,17 @@ export function ActionButtons() {
         whileTap={{ scale: 0.95 }}
         onClick={shuffleTiles}
         className={cn(
-          "p-3 sm:p-4 rounded-xl",
-          "bg-white/80 backdrop-blur-sm",
+          "p-3 rounded-lg",
+          "bg-white",
           "border border-gray-200",
           "text-gray-600 hover:text-gray-900",
-          "hover:bg-white hover:border-gray-300",
-          "transition-all duration-200",
-          "shadow-sm hover:shadow-md"
+          "hover:border-gray-300",
+          "transition-colors duration-150",
+          "shadow-sm"
         )}
         aria-label="Shuffle tiles"
       >
-        <Shuffle className="w-5 h-5 sm:w-6 sm:h-6" />
+        <Shuffle className="w-5 h-5" />
       </motion.button>
 
       {/* Clear Button */}
@@ -60,14 +59,14 @@ export function ActionButtons() {
         onClick={clearSelection}
         disabled={!hasSelection}
         className={cn(
-          "p-3 sm:p-4 rounded-xl",
-          "transition-all duration-200",
+          "p-3 rounded-lg",
+          "transition-colors duration-150",
           hasSelection
             ? [
-                "bg-rose-50 border border-rose-200",
-                "text-rose-600 hover:text-rose-700",
-                "hover:bg-rose-100 hover:border-rose-300",
-                "shadow-sm hover:shadow-md"
+                "bg-white border border-gray-200",
+                "text-gray-600 hover:text-gray-900",
+                "hover:border-gray-300",
+                "shadow-sm"
               ]
             : [
                 "bg-gray-100 border border-gray-200",
@@ -77,25 +76,25 @@ export function ActionButtons() {
         )}
         aria-label="Clear selection"
       >
-        <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />
+        <Trash2 className="w-5 h-5" />
       </motion.button>
 
       {/* Submit Button */}
       <motion.button
-        whileHover={canSubmit ? { scale: 1.05 } : {}}
-        whileTap={canSubmit ? { scale: 0.95 } : {}}
+        whileHover={canSubmit ? { scale: 1.02 } : {}}
+        whileTap={canSubmit ? { scale: 0.98 } : {}}
         onClick={submitWord}
         disabled={!canSubmit}
         className={cn(
-          "px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg",
+          "px-6 py-3 rounded-lg font-semibold text-base",
           "flex items-center gap-2",
-          "transition-all duration-200",
+          "transition-colors duration-150",
           canSubmit
             ? [
-                "bg-gradient-to-r from-orange-500 to-rose-500",
+                "bg-gray-900",
                 "text-white",
-                "shadow-lg shadow-orange-400/30",
-                "hover:shadow-xl hover:shadow-orange-400/40",
+                "shadow-sm",
+                "hover:bg-gray-800",
               ]
             : [
                 "bg-gray-200",
@@ -115,18 +114,18 @@ export function ActionButtons() {
         whileTap={{ scale: 0.95 }}
         onClick={handleHint}
         className={cn(
-          "p-3 sm:p-4 rounded-xl relative",
-          "bg-amber-50 border border-amber-200",
-          "text-amber-600 hover:text-amber-700",
-          "hover:bg-amber-100 hover:border-amber-300",
-          "transition-all duration-200",
-          "shadow-sm hover:shadow-md"
+          "p-3 rounded-lg relative",
+          "bg-white border border-gray-200",
+          "text-gray-600 hover:text-gray-900",
+          "hover:border-gray-300",
+          "transition-colors duration-150",
+          "shadow-sm"
         )}
         aria-label="Get hint"
       >
-        <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6" />
+        <Lightbulb className="w-5 h-5" />
         {hintsUsed > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-xs rounded-full flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-gray-900 text-white text-xs rounded-full flex items-center justify-center">
             {hintsUsed}
           </span>
         )}
@@ -134,6 +133,3 @@ export function ActionButtons() {
     </motion.div>
   );
 }
-
-
-
