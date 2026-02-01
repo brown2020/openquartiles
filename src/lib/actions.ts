@@ -603,7 +603,7 @@ const DAILY_THEMES = [
 /**
  * Get today's date string for daily puzzle
  */
-export function getTodayDateString(): string {
+function getTodayDateString(): string {
   return new Date().toISOString().split("T")[0];
 }
 
