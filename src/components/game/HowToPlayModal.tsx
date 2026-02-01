@@ -70,7 +70,7 @@ export function HowToPlayModal() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
-                      <span>Select 2-4 tiles to form valid English words</span>
+                      <span>Select 1-4 tiles to form valid English words</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
@@ -90,13 +90,14 @@ export function HowToPlayModal() {
                     Scoring
                   </h3>
                   <div className="grid grid-cols-2 gap-2">
+                    <ScoreCard tiles={1} points={SCORING.ONE_TILE} />
                     <ScoreCard tiles={2} points={SCORING.TWO_TILES} />
                     <ScoreCard tiles={3} points={SCORING.THREE_TILES} />
                     <ScoreCard tiles={4} points={SCORING.FOUR_TILES} isQuartile />
-                    <ScoreCard 
-                      label="All 5 Quartiles" 
-                      points={SCORING.ALL_QUARTILES_BONUS} 
-                      isBonus 
+                    <ScoreCard
+                      label="All 5 Quartiles"
+                      points={SCORING.ALL_QUARTILES_BONUS}
+                      isBonus
                     />
                   </div>
                 </section>

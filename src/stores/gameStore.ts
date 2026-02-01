@@ -41,6 +41,7 @@ interface GameStore {
   selectTile: (tileId: string) => void;
   deselectTile: (tileId: string) => void;
   clearSelection: () => void;
+  reorderSelectedTiles: (newOrder: string[]) => void;
   submitWord: () => void;
   shuffleTiles: () => void;
   useHint: () => string | null;
@@ -178,6 +179,14 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
+      reorderSelectedTiles: (newOrder: string[]) => {
+        set({
+          selectedTileIds: newOrder,
+          lastAttemptedWord: null,
+          lastAttemptResult: null,
+        });
+      },
+
       getCurrentWord: () => {
         const { tiles, selectedTileIds } = get();
         return selectedTileIds
@@ -196,8 +205,8 @@ export const useGameStore = create<GameStore>()(
 
       submitWord: () => {
         const { puzzle, tiles, selectedTileIds, foundWords, score, quartilesFound, stats } = get();
-        
-        if (!puzzle || selectedTileIds.length < 2) return;
+
+        if (!puzzle || selectedTileIds.length < 1) return;
 
         const currentWord = get().getCurrentWord();
         
@@ -217,9 +226,10 @@ export const useGameStore = create<GameStore>()(
         
         // Calculate tile count and points dynamically
         const tileCount = selectedTileIds.length;
-        const points = tileCount >= 4 ? SCORING.FOUR_TILES : 
-                      tileCount === 3 ? SCORING.THREE_TILES : 
-                      SCORING.TWO_TILES;
+        const points = tileCount >= 4 ? SCORING.FOUR_TILES :
+                      tileCount === 3 ? SCORING.THREE_TILES :
+                      tileCount === 2 ? SCORING.TWO_TILES :
+                      SCORING.ONE_TILE;
         const isQuartile = tileCount >= 4;
 
         if (validWord) {

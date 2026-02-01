@@ -112,6 +112,7 @@ export interface GameState {
  * Scoring constants
  */
 export const SCORING = {
+  ONE_TILE: 1,
   TWO_TILES: 2,
   THREE_TILES: 4,
   FOUR_TILES: 8, // Quartile!
@@ -122,8 +123,9 @@ export const SCORING = {
 /**
  * Get points for a word based on tile count
  */
-export function getPointsForTileCount(tileCount: 2 | 3 | 4): number {
+export function getPointsForTileCount(tileCount: 1 | 2 | 3 | 4): number {
   switch (tileCount) {
+    case 1: return SCORING.ONE_TILE;
     case 2: return SCORING.TWO_TILES;
     case 3: return SCORING.THREE_TILES;
     case 4: return SCORING.FOUR_TILES;
