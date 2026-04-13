@@ -378,11 +378,8 @@ Return this exact JSON format (no markdown, no explanation):
 Just give me 5 words related to "${puzzleTheme}". I will split them into chunks myself.`,
       });
 
-      console.log("Raw AI Response:", text);
-
       // Clean the response
       const cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
-      console.log("Cleaned Response:", cleanText);
 
       const data = JSON.parse(cleanText) as AIResponse;
 
@@ -406,7 +403,6 @@ Just give me 5 words related to "${puzzleTheme}". I will split them into chunks 
         // Verify chunks reconstruct the word
         const reconstructed = chunks.join("");
         if (reconstructed !== word) {
-          console.log(`Chunk mismatch for ${word}: ${reconstructed}`);
           continue;
         }
 
@@ -426,17 +422,12 @@ Just give me 5 words related to "${puzzleTheme}". I will split them into chunks 
         validatedWords.slice(0, 5)
       );
       return puzzle;
-    } catch (error) {
-      console.error("Generate Puzzle Error:", error);
+    } catch {
       retries++;
 
       if (retries >= MAX_RETRIES) {
-        // Return a fallback puzzle
-        console.log("Using fallback puzzle");
         return getFallbackPuzzle(puzzleTheme);
       }
-
-      console.log(`Retrying (${retries}/${MAX_RETRIES})...`);
     }
   }
 
@@ -461,7 +452,6 @@ function buildPuzzleFromWords(theme: string, words: AIWordData[]): Puzzle {
     [];
 
   words.forEach((wordData) => {
-    const startIndex = tileIndex;
     const tileIds = wordData.chunks.map(() => `tile-${tileIndex++}`);
 
     // Add tiles
@@ -648,17 +638,3 @@ function getRandomTheme(): string {
   return themes[Math.floor(Math.random() * themes.length)];
 }
 
-// Keep legacy export for backwards compatibility
-export async function getThemeWords(theme: string) {
-  const puzzle = await generatePuzzle(theme);
-  return {
-    theme: puzzle.theme || theme,
-    words: puzzle.quartiles.map((q) => ({
-      word: q.word,
-      chunks: puzzle.tiles.slice(
-        parseInt(q.tileIds[0].replace("tile-", "")),
-        parseInt(q.tileIds[q.tileIds.length - 1].replace("tile-", "")) + 1
-      ),
-    })),
-  };
-}

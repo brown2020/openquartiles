@@ -1,10 +1,43 @@
 // src/components/game/GameComplete.tsx
 'use client';
 
+import { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/stores/gameStore';
 import { Trophy, Star, RefreshCcw, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+interface ConfettiParticle {
+  x: number;
+  rotate: number;
+  duration: number;
+  delay: number;
+  left: string;
+}
+
+function generateParticles(): ConfettiParticle[] {
+  return Array.from({ length: 20 }, () => ({
+    x: Math.random() * 400 - 200,
+    rotate: Math.random() * 360,
+    duration: 2 + Math.random() * 2,
+    delay: Math.random() * 2,
+    left: `${Math.random() * 100}%`,
+  }));
+}
+
+function useConfettiParticles(): ConfettiParticle[] {
+  const particlesRef = useRef<ConfettiParticle[] | null>(null);
+  const [particles, setParticles] = useState<ConfettiParticle[]>([]);
+
+  useEffect(() => {
+    if (!particlesRef.current) {
+      particlesRef.current = generateParticles();
+      setParticles(particlesRef.current);
+    }
+  }, []);
+
+  return particles;
+}
 
 export function GameComplete() {
   const { 
@@ -17,19 +50,22 @@ export function GameComplete() {
     stats 
   } = useGameStore();
 
+  const confettiParticles = useConfettiParticles();
+
   if (!isComplete) return null;
 
   const rank = getRank();
   const allQuartilesFound = quartilesFound === 5;
 
   const handleShare = () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
     const text = `🧩 Quartiles\n\n` +
       `Score: ${score}\n` +
       `Rank: ${rank}\n` +
       `Quartiles: ${quartilesFound}/5 ⭐\n` +
       `Words: ${foundWords.length}\n\n` +
-      `Play at: ${window.location.href}`;
-    
+      `Play at: ${url}`;
+
     if (navigator.share) {
       navigator.share({ text });
     } else {
@@ -65,26 +101,26 @@ export function GameComplete() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            {[...Array(20)].map((_, i) => (
+            {confettiParticles.map((p, i) => (
               <motion.div
                 key={i}
                 className="absolute w-2 h-2 rounded-full bg-white/30"
                 initial={{
-                  x: Math.random() * 400 - 200,
+                  x: p.x,
                   y: -20,
                   opacity: 0,
                 }}
                 animate={{
                   y: 200,
                   opacity: [0, 1, 0],
-                  rotate: Math.random() * 360,
+                  rotate: p.rotate,
                 }}
                 transition={{
-                  duration: 2 + Math.random() * 2,
+                  duration: p.duration,
                   repeat: Infinity,
-                  delay: Math.random() * 2,
+                  delay: p.delay,
                 }}
-                style={{ left: `${Math.random() * 100}%` }}
+                style={{ left: p.left }}
               />
             ))}
           </motion.div>
@@ -196,6 +232,7 @@ export function GameComplete() {
                 "border border-gray-200",
                 "flex items-center justify-center"
               )}
+              aria-label="Share results"
             >
               <Share2 className="w-5 h-5" />
             </motion.button>

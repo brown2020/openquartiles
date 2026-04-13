@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 
 export function GameBoard() {
-  const { tiles, selectedTileIds, selectTile, deselectTile, foundWords, puzzle } = useGameStore();
+  const { tiles, selectedTileIds, selectTile, deselectTile, foundWords } = useGameStore();
   
   // Filter to only show available (not used) tiles
   const availableTiles = tiles.filter(t => !t.isUsed);

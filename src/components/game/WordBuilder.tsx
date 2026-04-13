@@ -15,9 +15,6 @@ export function WordBuilder() {
     reorderSelectedTiles
   } = useGameStore();
 
-  // Get selected tiles in order
-  const selectedTiles = selectedTileIds.map(id => tiles.find(t => t.id === id));
-
   const getResultMessage = () => {
     if (!lastAttemptResult) return null;
     switch (lastAttemptResult) {
