@@ -1,23 +1,5 @@
 // src/lib/types.ts
 
-// Legacy types for AI-generated puzzles (backwards compatibility)
-export interface WordData {
-  word: string;
-  chunks: string[];
-}
-
-export interface GameWords {
-  theme: string;
-  words: WordData[];
-}
-
-export interface GameChunk {
-  id: number;
-  text: string;
-  isFound?: boolean;
-  foundIndex?: number;
-}
-
 /**
  * Represents a single tile in the 4x5 grid
  */
@@ -92,23 +74,6 @@ export type Rank =
   | 'Genius';      // All quartiles + high score
 
 /**
- * Game state for the current session
- */
-export interface GameState {
-  puzzle: Puzzle | null;
-  tiles: Tile[];
-  selectedTileIds: string[];
-  foundWords: FoundWord[];
-  score: number;
-  quartilesFound: number;
-  isComplete: boolean;
-  isLoading: boolean;
-  error: string | null;
-  hintsUsed: number;
-  hintsRemaining: number;
-}
-
-/**
  * Scoring constants
  */
 export const SCORING = {
@@ -119,18 +84,6 @@ export const SCORING = {
   ALL_QUARTILES_BONUS: 40,
   EXPERT_THRESHOLD: 100,
 } as const;
-
-/**
- * Get points for a word based on tile count
- */
-export function getPointsForTileCount(tileCount: 1 | 2 | 3 | 4): number {
-  switch (tileCount) {
-    case 1: return SCORING.ONE_TILE;
-    case 2: return SCORING.TWO_TILES;
-    case 3: return SCORING.THREE_TILES;
-    case 4: return SCORING.FOUR_TILES;
-  }
-}
 
 /**
  * Calculate rank based on score and quartiles found

@@ -25,7 +25,6 @@ interface GameStore {
   error: string | null;
   hintsUsed: number;
   showHowToPlay: boolean;
-  showWordBreakdown: boolean;
   lastAttemptedWord: string | null;
   lastAttemptResult: 'correct' | 'incorrect' | 'already-found' | null;
   inputTheme: string;
@@ -44,10 +43,9 @@ interface GameStore {
   reorderSelectedTiles: (newOrder: string[]) => void;
   submitWord: () => void;
   shuffleTiles: () => void;
-  useHint: () => string | null;
+  getHint: () => string | null;
   resetGame: () => void;
   setShowHowToPlay: (show: boolean) => void;
-  setShowWordBreakdown: (show: boolean) => void;
   getCurrentWord: () => string;
   getRank: () => Rank;
   getUnfoundQuartiles: () => ValidWord[];
@@ -99,7 +97,6 @@ export const useGameStore = create<GameStore>()(
       error: null,
       hintsUsed: 0,
       showHowToPlay: false,
-      showWordBreakdown: false,
       lastAttemptedWord: null,
       lastAttemptResult: null,
       inputTheme: '',
@@ -330,7 +327,7 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      useHint: () => {
+      getHint: () => {
         const { hintsUsed } = get();
         const unfound = get().getUnfoundQuartiles();
         
@@ -365,10 +362,6 @@ export const useGameStore = create<GameStore>()(
 
       setShowHowToPlay: (show: boolean) => {
         set({ showHowToPlay: show });
-      },
-
-      setShowWordBreakdown: (show: boolean) => {
-        set({ showWordBreakdown: show });
       },
 
       getRank: () => {
