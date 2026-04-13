@@ -1,7 +1,7 @@
 // src/components/game/ActionButtons.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shuffle, Trash2, Check, Lightbulb, X } from 'lucide-react';
 import { useGameStore } from '@/stores/gameStore';
@@ -13,25 +13,33 @@ export function ActionButtons() {
     submitWord,
     clearSelection,
     shuffleTiles,
-    useHint,
+    getHint,
     hintsUsed,
   } = useGameStore();
 
   const [currentHint, setCurrentHint] = useState<string | null>(null);
+  const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+    };
+  }, []);
 
   const hasSelection = selectedTileIds.length > 0;
   const canSubmit = selectedTileIds.length >= 1;
 
   const handleHint = () => {
-    const hint = useHint();
+    const hint = getHint();
     if (hint) {
       setCurrentHint(hint);
-      // Auto-dismiss after 5 seconds
-      setTimeout(() => setCurrentHint(null), 5000);
+      if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+      hintTimeoutRef.current = setTimeout(() => setCurrentHint(null), 5000);
     }
   };
 
   const dismissHint = () => {
+    if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
     setCurrentHint(null);
   };
 
@@ -52,9 +60,10 @@ export function ActionButtons() {
             </span>
             <button
               onClick={dismissHint}
-              className="ml-2 p-1 hover:bg-amber-100 rounded"
+              className="ml-2 p-2 hover:bg-amber-100 rounded"
+              aria-label="Dismiss hint"
             >
-              <X className="w-3 h-3 text-amber-600" />
+              <X className="w-4 h-4 text-amber-600" />
             </button>
           </motion.div>
         )}
