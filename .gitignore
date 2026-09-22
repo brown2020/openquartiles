@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# app-eval artifacts
+axe-results.json
+keyboard-traverse.json
+ux-prove.json
+shot-*.png
+ax-tree.json
