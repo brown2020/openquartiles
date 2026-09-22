@@ -34,7 +34,7 @@ Each generated word:
 
 ## Technology Stack
 
-- Next.js 16.0.3 (App Router)
+- Next.js 16 (App Router)
 - React 19
 - TypeScript
 - Tailwind CSS 4
@@ -152,3 +152,19 @@ You can deploy your own version of OpenQuartiles to Vercel with one click:
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbrown2020%2Fopenquartiles&env=OPENAI_API_KEY)
 
 Remember to add your OpenAI API key to the environment variables in your Vercel project settings.
+
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck, tests, and production build.
+`OPENAI_API_KEY` is wired via `${{ secrets.OPENAI_API_KEY }}` on the build step only — never inlined.
+Builds succeed without the secret (local fallback puzzle).
+
+## Scripts
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```

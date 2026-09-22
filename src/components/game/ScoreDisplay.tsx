@@ -1,7 +1,5 @@
-// src/components/game/ScoreDisplay.tsx
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/stores/gameStore';
 import { getRankProgress } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -22,32 +20,13 @@ export function ScoreDisplay() {
   const config = RANK_CONFIG[rank];
 
   return (
-    <motion.div
-      className="w-full max-w-md mx-auto"
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
+    <div className="w-full max-w-md mx-auto" aria-live="polite">
       <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-        {/* Score and Quartiles Row */}
         <div className="flex items-center justify-between mb-4">
-          {/* Score */}
           <div className="flex items-center gap-3">
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={score}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="text-3xl font-bold text-gray-900"
-              >
-                {score}
-              </motion.span>
-            </AnimatePresence>
+            <span className="text-3xl font-bold text-gray-900">{score}</span>
             <span className="text-sm text-gray-500">points</span>
           </div>
-
-          {/* Quartiles Found */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">Quartiles</span>
             <span className="text-xl font-bold text-gray-900">{quartilesFound}</span>
@@ -55,17 +34,19 @@ export function ScoreDisplay() {
           </div>
         </div>
 
-        {/* Progress Bar with Rank Labels */}
         <div className="space-y-2">
-          <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
-            <motion.div
-              className={cn("h-full rounded-full", config.color)}
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(progress, 100)}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
+          <div
+            className="relative h-2 bg-gray-100 rounded-full overflow-hidden"
+            role="progressbar"
+            aria-valuenow={Math.min(progress, 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Rank progress ${Math.round(progress)} percent`}
+          >
+            <div
+              className={cn('h-full rounded-full transition-[width] duration-500 ease-out', config.color)}
+              style={{ width: `${Math.min(progress, 100)}%` }}
             />
-
-            {/* Rank threshold markers */}
             {[25, 50, 75].map((threshold) => (
               <div
                 key={threshold}
@@ -74,8 +55,6 @@ export function ScoreDisplay() {
               />
             ))}
           </div>
-
-          {/* Rank labels below progress bar */}
           <div className="flex justify-between text-xs text-gray-400">
             <span>0</span>
             <span>25</span>
@@ -85,16 +64,17 @@ export function ScoreDisplay() {
           </div>
         </div>
 
-        {/* Current Rank Badge */}
         <div className="mt-3 flex items-center justify-center">
-          <span className={cn(
-            "px-3 py-1 rounded-full text-sm font-medium text-white",
-            config.color
-          )}>
+          <span
+            className={cn(
+              'px-3 py-1 rounded-full text-sm font-medium text-white',
+              config.color
+            )}
+          >
             {config.label}
           </span>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

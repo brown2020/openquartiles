@@ -12,7 +12,7 @@ OpenQuartiles is an AI-powered word puzzle game inspired by the Quartiles game i
 - **UI**: React 19, TypeScript 5
 - **State Management**: Zustand 5 with localStorage persistence
 - **Styling**: Tailwind CSS 4, shadcn/ui, Radix UI primitives
-- **Animations**: Framer Motion 12 (including Reorder for drag-to-reorder)
+- **Animations**: CSS transitions (prefers-reduced-motion friendly)
 - **AI**: OpenAI GPT-4 via Vercel AI SDK
 
 ## Project Structure

@@ -1,7 +1,5 @@
-// src/components/game/WordBuilder.tsx
 'use client';
 
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useGameStore } from '@/stores/gameStore';
 import { cn } from '@/lib/utils';
 
@@ -12,8 +10,10 @@ export function WordBuilder() {
     lastAttemptedWord,
     lastAttemptResult,
     clearSelection,
-    reorderSelectedTiles
+    reorderSelectedTiles,
   } = useGameStore();
+
+  const tileById = new Map(tiles.map((t) => [t.id, t]));
 
   const getResultMessage = () => {
     if (!lastAttemptResult) return null;
@@ -29,118 +29,107 @@ export function WordBuilder() {
 
   const resultMessage = getResultMessage();
 
+  const moveChip = (index: number, direction: -1 | 1) => {
+    const next = index + direction;
+    if (next < 0 || next >= selectedTileIds.length) return;
+    const order = [...selectedTileIds];
+    const tmp = order[index];
+    order[index] = order[next];
+    order[next] = tmp;
+    reorderSelectedTiles(order);
+  };
+
   return (
-    <div className="h-24 flex flex-col items-center justify-center">
-      <AnimatePresence mode="wait">
-        {selectedTileIds.length > 0 ? (
-          <motion.div
-            key="tiles"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex flex-col items-center gap-2"
-          >
-            {/* Selected tiles as draggable chips */}
-            <div className="flex items-center gap-1.5">
-              <Reorder.Group
-                axis="x"
-                values={selectedTileIds}
-                onReorder={reorderSelectedTiles}
-                className="flex items-center gap-1.5"
-              >
-                {selectedTileIds.map((tileId) => {
-                  const tile = tiles.find(t => t.id === tileId);
-                  return (
-                    <Reorder.Item
-                      key={tileId}
-                      value={tileId}
-                      className={cn(
-                        "px-3 py-2 rounded-lg font-bold text-lg",
-                        "bg-gray-900 text-white",
-                        "shadow-sm cursor-grab active:cursor-grabbing",
-                        "select-none"
-                      )}
-                      whileDrag={{ scale: 1.1, zIndex: 10 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+    <div className="h-24 flex flex-col items-center justify-center" aria-live="polite">
+      {selectedTileIds.length > 0 ? (
+        <div className="flex flex-col items-center gap-2">
+          <ul className="flex items-center gap-1.5 list-none m-0 p-0" aria-label="Selected tiles">
+            {selectedTileIds.map((tileId, index) => {
+              const tile = tileById.get(tileId);
+              return (
+                <li key={tileId} className="flex flex-col items-center gap-0.5">
+                  <span
+                    className={cn(
+                      'px-3 py-2 rounded-lg font-bold text-lg',
+                      'bg-gray-900 text-white shadow-sm select-none'
+                    )}
+                  >
+                    {tile?.text || ''}
+                  </span>
+                  <div className="flex gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => moveChip(index, -1)}
+                      disabled={index === 0}
+                      className="text-[10px] px-1 text-gray-500 disabled:opacity-30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-400 rounded"
+                      aria-label={`Move ${tile?.text || 'tile'} left`}
                     >
-                      {tile?.text || ''}
-                    </Reorder.Item>
-                  );
-                })}
-              </Reorder.Group>
-
-              {/* Empty slots to show max 4 */}
-              {Array.from({ length: Math.max(0, 4 - selectedTileIds.length) }).map((_, index) => (
-                <motion.div
-                  key={`empty-${index}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className={cn(
-                    "w-12 h-12 rounded-lg",
-                    "border-2 border-dashed border-gray-200",
-                    "bg-gray-50"
-                  )}
-                />
-              ))}
-            </div>
-
-            {/* Tile count indicator and actions */}
-            <div className="flex items-center gap-2">
-              <span className={cn(
-                "text-xs font-medium px-2 py-0.5 rounded-full",
-                selectedTileIds.length === 4
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600"
-              )}>
-                {selectedTileIds.length} tile{selectedTileIds.length !== 1 ? 's' : ''}
-              </span>
-              <span className="text-xs text-gray-400">drag to reorder</span>
-              <button
-                onClick={clearSelection}
-                className="text-xs text-gray-400 hover:text-gray-600 underline"
-              >
-                Clear
-              </button>
-            </div>
-          </motion.div>
-        ) : resultMessage ? (
-          <motion.div
-            key="result"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className={cn(
-              "px-4 py-2 rounded-lg font-semibold",
-              resultMessage.bg,
-              resultMessage.color
-            )}
-          >
-            {resultMessage.text}
-            {lastAttemptResult === 'correct' && ' ✓'}
-            {lastAttemptResult === 'incorrect' && ' ✗'}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="placeholder"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex items-center gap-1.5"
-          >
-            {/* Empty placeholder slots */}
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={`placeholder-${index}`}
-                className={cn(
-                  "w-12 h-12 rounded-lg",
-                  "border-2 border-dashed border-gray-200",
-                  "bg-gray-50"
-                )}
+                      ◀
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveChip(index, 1)}
+                      disabled={index === selectedTileIds.length - 1}
+                      className="text-[10px] px-1 text-gray-500 disabled:opacity-30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-400 rounded"
+                      aria-label={`Move ${tile?.text || 'tile'} right`}
+                    >
+                      ▶
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+            {Array.from({ length: Math.max(0, 4 - selectedTileIds.length) }).map((_, index) => (
+              <li
+                key={`empty-${index}`}
+                className="w-12 h-12 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50"
+                aria-hidden
               />
             ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </ul>
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'text-xs font-medium px-2 py-0.5 rounded-full',
+                selectedTileIds.length === 4
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-gray-100 text-gray-600'
+              )}
+            >
+              {selectedTileIds.length} tile{selectedTileIds.length !== 1 ? 's' : ''}
+            </span>
+            <span className="text-xs text-gray-400">use arrows to reorder</span>
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-xs text-gray-400 hover:text-gray-600 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      ) : resultMessage ? (
+        <div
+          className={cn(
+            'px-4 py-2 rounded-lg font-semibold',
+            resultMessage.bg,
+            resultMessage.color
+          )}
+        >
+          {resultMessage.text}
+          {lastAttemptResult === 'correct' && ' ✓'}
+          {lastAttemptResult === 'incorrect' && ' ✗'}
+        </div>
+      ) : (
+        <div className="flex items-center gap-1.5" aria-hidden>
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={`placeholder-${index}`}
+              className="w-12 h-12 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50"
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
