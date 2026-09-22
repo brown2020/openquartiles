@@ -131,7 +131,7 @@ export function WelcomeScreen({
           </button>
           <Link
             href="/about"
-            className="block text-sm text-gray-400 hover:text-gray-600 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded"
+            className="block text-sm text-gray-600 hover:text-gray-900 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded"
           >
             About
           </Link>
