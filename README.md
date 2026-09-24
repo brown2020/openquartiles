@@ -1,170 +1,123 @@
-# OpenQuartiles Word Game
+# OpenQuartiles
 
-OpenQuartiles is an engaging word puzzle game where players reconstruct themed words from scrambled chunks. Powered by AI, it generates unique word sets based on any theme you choose.
-
-[Play OpenQuartiles](https://openquartiles.vercel.app/)
-
-![OpenQuartiles Screenshot](public/screenshot.png)
-
-## How to Play
-
-1. Enter a theme (e.g., "space", "food", "animals")
-2. The game generates 5 themed words, each split into 4 chunks
-3. Click on chunks to build your word
-4. Press Enter to check if your word is correct
-5. Press Escape or click Clear to reset your current guess
-6. Find all 5 words to win!
-
-Each generated word:
-
-- Is related to your chosen theme
-- Is 10-14 letters long
-- Is split into 4 logical chunks
-- Can only be used once
+A Quartiles-style word puzzle: combine letter tiles to form words, find all five four-tile “Quartiles,” and climb ranks from Beginner toward Genius. Play a daily themed puzzle or generate a custom theme. Live demo: [openquartiles.vercel.app](https://openquartiles.vercel.app/).
 
 ## Features
 
-- 🎯 AI-generated themed word sets
-- 🎮 Intuitive drag-and-drop interface
-- ⌨️ Keyboard shortcuts support
-- 🎨 Clean, modern UI using shadcn components
-- 📱 Responsive design for all devices
-- 🔄 Play again with same theme option
-- ✨ Immediate feedback on guesses
+Verified from the current codebase:
 
-## Technology Stack
+- Daily puzzle (theme seeded by UTC date) and custom/random theme play
+- Tile selection, word builder, shuffle, hints, scoring, and rank calculation
+- Quartiles (4-tile solutions) plus shorter valid combinations against a common-word list
+- Welcome screen, how-to-play modal, found-words list, game-complete view
+- Stats persistence (streaks, best score, games played) via Zustand `persist` → `localStorage`
+- Server actions `generatePuzzle` / `generateDailyPuzzle` using OpenAI (`gpt-4.1`) when `OPENAI_API_KEY` is set; otherwise a local fallback puzzle
+- Theme sanitization on the server (`sanitizeTheme`)
+- Static About page at `/about`
 
-- Next.js 16 (App Router)
-- React 19
-- TypeScript
-- Tailwind CSS 4
-- shadcn/ui + Radix UI
-- Zustand
-- Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/rsc`)
-- OpenAI SDK (`openai`)
-- Vercel hosting
+## Tech stack
 
-## Local Development
+| Area | Choice | Version (package.json) |
+| --- | --- | --- |
+| Framework | Next.js (App Router) | ^16.3.6 |
+| UI | React | ^19.3.0 |
+| Language | TypeScript | ^6 |
+| Styling | Tailwind CSS + animate plugin | ^4.3.3 |
+| UI primitives | Radix Slot/Toast, CVA, Lucide | — |
+| State | Zustand | ^5.0.15 |
+| AI | Vercel AI SDK + `@ai-sdk/openai` | ai ^6.0.288 |
+| Validation / helpers | Zod | ^4.6.5 |
+| Lint / test | ESLint 10, Node test runner + `tsx` | — |
+
+No Firebase, Stripe, or client-exposed API keys.
+
+## Project structure
+
+```
+src/
+  app/
+    page.tsx              # GameArea
+    about/page.tsx
+    layout.tsx
+  components/game/        # Welcome, board, tiles, scoring, modals, …
+  components/ui/          # Toast
+  stores/gameStore.ts
+  hooks/
+  lib/
+    actions.ts            # "use server" puzzle generation
+    puzzle.ts             # Pure helpers + fallback
+    types.ts
+    *.test.ts
+docs/
+.env.example
+.github/workflows/ci.yml
+```
+
+## Getting started
 
 ### Prerequisites
 
-- Node.js 18.17 or later
-- OpenAI API key
+- Node.js 22 (matches CI) or a current LTS
+- npm
+- OpenAI API key (optional; fallback puzzles work without it)
 
-### Setup
-
-1. Clone the repository:
+### Clone and install
 
 ```bash
 git clone https://github.com/brown2020/openquartiles.git
 cd openquartiles
-```
-
-2. Install dependencies:
-
-```bash
 npm install
 ```
 
-3. Create a `.env.local` file and add your OpenAI API key:
+### Environment variables
 
-```
-OPENAI_API_KEY=your_openai_api_key
+| Name | Purpose | Where to get it |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | Server-only key for AI puzzle generation. Optional; missing key → `getFallbackPuzzle`. | [OpenAI API keys](https://platform.openai.com/api-keys) |
+
+`.env.example`:
+
+```bash
+OPENAI_API_KEY=
 ```
 
-4. Run the development server:
+Put real values only in `.env.local` (gitignored). Never commit keys.
+
+### Run locally
 
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-### Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run format` - Format code with Prettier
-
-## Project Structure
-
-```
-src/
-├── app/                   # Next.js app router
-├── components/
-│   ├── game/             # Game-specific components
-│   │   ├── GameArea.tsx  # Main game component
-│   │   ├── GameBoard.tsx # Game board display
-│   │   └── ...
-│   └── ui/              # shadcn components
-├── lib/
-│   ├── actions.ts       # Server actions
-│   ├── types.ts         # TypeScript types
-│   └── utils.ts         # Utility functions
-└── stores/              # Zustand stores
-```
-
-## Key Components
-
-- `GameArea`: Main game container and state management
-- `GameBoard`: Displays word chunks and found words
-- `CurrentGuessDisplay`: Shows current word being built
-- `GameHeader`: Shows theme and game controls
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a new branch: `git checkout -b feature/your-feature`
-3. Make your changes and commit: `git commit -m 'Add some feature'`
-4. Push to the branch: `git push origin feature/your-feature`
-5. Submit a pull request
-
-## License
-
-This project is licensed under the GNU Affero General Public License v3.0. See the [LICENSE.md](LICENSE.md) file for details.
-
-## Contact
-
-For questions or suggestions, please contact:
-
-- Email: info@ignitechannel.com
-- GitHub Issues: [Create an issue](https://github.com/brown2020/openquartiles/issues)
-
-## Acknowledgments
-
-- Built with [Next.js](https://nextjs.org/)
-- UI components from [shadcn/ui](https://ui.shadcn.com/)
-- Word generation powered by [OpenAI](https://openai.com/)
-- Deployed on [Vercel](https://vercel.com/)
-
-## Support
-
-If you like this project, please give it a ⭐ on GitHub!
-
-## Deploy Your Own
-
-You can deploy your own version of OpenQuartiles to Vercel with one click:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbrown2020%2Fopenquartiles&env=OPENAI_API_KEY)
-
-Remember to add your OpenAI API key to the environment variables in your Vercel project settings.
-
-
-## CI
-
-GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck, tests, and production build.
-`OPENAI_API_KEY` is wired via `${{ secrets.OPENAI_API_KEY }}` on the build step only — never inlined.
-Builds succeed without the secret (local fallback puzzle).
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
-```bash
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
+| Script | Description |
+| --- | --- |
+| `npm run dev` | Next.js development server |
+| `npm run build` | Production build |
+| `npm start` | Serve the production build |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Node tests via `tsx` |
+| `npm run doctor` | Optional `react-doctor` scan |
+
+## Testing and CI
+
+- Tests: `src/lib/puzzle.test.ts`, `src/lib/routes.test.ts`.
+- CI: install with `--ignore-scripts`, lint, typecheck, test, then build with optional `OPENAI_API_KEY` from Actions secrets (Node 22). Build tolerates a missing key via deferred OpenAI init + fallback puzzle.
+
+## Deployment
+
+Standard Next.js deploy (demo: [openquartiles.vercel.app](https://openquartiles.vercel.app/). Set `OPENAI_API_KEY` in the host environment for AI-generated puzzles.
+
+## Contributing
+
+1. Branch from `dev`.
+2. Run lint, typecheck, and tests before opening a PR.
+3. Keep `OPENAI_API_KEY` server-only; do not add `NEXT_PUBLIC_*` secrets.
+
+## License
+
+[GNU Affero General Public License v3.0](LICENSE.md) (AGPL-3.0).
