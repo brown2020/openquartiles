@@ -15,6 +15,9 @@ export default function GameArea() {
     shuffleTiles,
     selectedTileIds,
     deselectTile,
+    showHowToPlay,
+    isComplete,
+    victoryDismissed,
   } = useGameStore();
 
   const { isPending, startCustom, startDaily, startNewSameTheme } =
@@ -22,6 +25,8 @@ export default function GameArea() {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      if (showHowToPlay || (isComplete && !victoryDismissed)) return;
+
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName?.toLowerCase();
       const inField = tag === 'input' || tag === 'textarea' || target?.isContentEditable;
@@ -41,7 +46,7 @@ export default function GameArea() {
         if (lastId) deselectTile(lastId);
       }
     },
-    [submitWord, clearSelection, shuffleTiles, selectedTileIds, deselectTile]
+    [submitWord, clearSelection, shuffleTiles, selectedTileIds, deselectTile, showHowToPlay, isComplete, victoryDismissed]
   );
 
   useEffect(() => {

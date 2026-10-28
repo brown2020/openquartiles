@@ -2,6 +2,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { gradeWord, revealHint } from '@/lib/actions';
+import { initialStats, sanitizeStats } from '@/lib/stats';
+import { advanceStreak, utcDateString } from '@/lib/streak';
 import { 
   Tile, 
   FoundWord, 
@@ -22,6 +24,7 @@ interface GameStore {
   score: number;
   quartilesFound: number;
   isComplete: boolean;
+  victoryDismissed: boolean;
   isLoading: boolean;
   error: string | null;
   hintsUsed: number;
@@ -47,21 +50,10 @@ interface GameStore {
   getHint: () => Promise<string | null>;
   resetGame: () => void;
   setShowHowToPlay: (show: boolean) => void;
+  dismissVictory: () => void;
   getCurrentWord: () => string;
   getRank: () => Rank;
 }
-
-const initialStats: GameStats = {
-  gamesPlayed: 0,
-  gamesCompleted: 0,
-  totalScore: 0,
-  bestScore: 0,
-  quartilesFound: 0,
-  currentStreak: 0,
-  longestStreak: 0,
-  lastPlayedDate: null,
-  rankHistory: [],
-};
 
 function createTilesFromPuzzle(puzzle: ClientPuzzle): Tile[] {
   return puzzle.tiles.map((text, index) => ({
@@ -101,6 +93,7 @@ export const useGameStore = create<GameStore>()(
       score: 0,
       quartilesFound: 0,
       isComplete: false,
+      victoryDismissed: false,
       isLoading: false,
       error: null,
       hintsUsed: 0,
@@ -122,6 +115,7 @@ export const useGameStore = create<GameStore>()(
           score: 0,
           quartilesFound: 0,
           isComplete: false,
+          victoryDismissed: false,
           isLoading: false,
           error: null,
           hintsUsed: 0,
@@ -294,10 +288,11 @@ export const useGameStore = create<GameStore>()(
             totalScore: latest.stats.totalScore + finalScore,
             bestScore: Math.max(latest.stats.bestScore, finalScore),
             quartilesFound: latest.stats.quartilesFound + newQuartilesFound,
-            currentStreak: latest.stats.currentStreak + 1,
-            longestStreak: Math.max(latest.stats.longestStreak, latest.stats.currentStreak + 1),
-            lastPlayedDate: new Date().toISOString().split('T')[0],
-            rankHistory: [...latest.stats.rankHistory, calculateRank(finalScore, newQuartilesFound)],
+            ...advanceStreak(latest.stats, utcDateString()),
+            rankHistory: [
+              ...(Array.isArray(latest.stats.rankHistory) ? latest.stats.rankHistory : []),
+              calculateRank(finalScore, newQuartilesFound),
+            ].slice(-100),
           };
         }
 
@@ -308,6 +303,7 @@ export const useGameStore = create<GameStore>()(
           score: finalScore,
           quartilesFound: newQuartilesFound,
           isComplete,
+          victoryDismissed: false,
           lastAttemptedWord: currentWord,
           lastAttemptResult: 'correct',
           stats: newStats,
@@ -371,6 +367,7 @@ export const useGameStore = create<GameStore>()(
           score: 0,
           quartilesFound: 0,
           isComplete: false,
+          victoryDismissed: false,
           isLoading: false,
           error: null,
           hintsUsed: 0,
@@ -384,6 +381,10 @@ export const useGameStore = create<GameStore>()(
         set({ showHowToPlay: show });
       },
 
+      dismissVictory: () => {
+        set({ victoryDismissed: true });
+      },
+
       getRank: () => {
         const { score, quartilesFound } = get();
         return calculateRank(score, quartilesFound);
@@ -392,6 +393,16 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'quartiles-storage',
       partialize: (state) => ({ stats: state.stats }),
+      merge: (persisted, current) => {
+        const stored =
+          persisted && typeof persisted === 'object' && 'stats' in persisted
+            ? (persisted as { stats?: unknown }).stats
+            : undefined;
+        return {
+          ...current,
+          stats: sanitizeStats(stored),
+        };
+      },
     }
   )
 );

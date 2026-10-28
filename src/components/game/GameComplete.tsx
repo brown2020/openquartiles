@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 export function GameComplete() {
   const {
     isComplete,
+    victoryDismissed,
+    dismissVictory,
     score,
     quartilesFound,
     foundWords,
@@ -21,17 +23,23 @@ export function GameComplete() {
   useEffect(() => {
     const el = dialogRef.current;
     if (!el) return;
-    if (isComplete) {
-      if (!el.open) el.showModal();
+    if (isComplete && !victoryDismissed) {
+      if (!el.open) {
+        try {
+          el.showModal();
+        } catch {
+          // Another dialog is already modal; the effect retries when it closes.
+        }
+      }
     } else if (el.open) {
       el.close();
     }
-  }, [isComplete]);
+  }, [isComplete, victoryDismissed]);
 
   const rank = getRank();
-  const allQuartilesFound = quartilesFound === 5;
+  const isGenius = rank === 'Genius';
 
-  const handleShare = () => {
+  const handleShare = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
     const text =
       `🧩 Quartiles\n\n` +
@@ -41,10 +49,23 @@ export function GameComplete() {
       `Words: ${foundWords.length}\n\n` +
       `Play at: ${url}`;
 
-    if (navigator.share) {
-      void navigator.share({ text });
-    } else {
-      void navigator.clipboard.writeText(text);
+    const writeClipboard = async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        // Clipboard can be denied; the score is still on screen.
+      }
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+        return;
+      }
+      await writeClipboard();
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      await writeClipboard();
     }
   };
 
@@ -53,12 +74,15 @@ export function GameComplete() {
       ref={dialogRef}
       aria-labelledby={titleId}
       className="fixed inset-0 m-auto max-w-md w-[calc(100%-2rem)] rounded-3xl border-0 bg-transparent p-0 shadow-2xl open:block backdrop:bg-gradient-to-br backdrop:from-orange-500/20 backdrop:to-rose-500/20 backdrop:backdrop-blur-sm"
-      onCancel={(e) => e.preventDefault()}
+      onCancel={(e) => {
+        e.preventDefault();
+        dismissVictory();
+      }}
     >
       <div className="bg-white rounded-3xl overflow-hidden">
         <div className="relative bg-gradient-to-r from-orange-500 to-rose-500 p-8 text-center text-white overflow-hidden">
           <div className="relative z-10">
-            {allQuartilesFound ? (
+            {isGenius ? (
               <div className="text-6xl mb-2" aria-hidden>
                 🧠
               </div>
@@ -66,10 +90,10 @@ export function GameComplete() {
               <Trophy className="w-16 h-16 mx-auto mb-2" aria-hidden />
             )}
             <h2 id={titleId} className="text-3xl font-bold">
-              {allQuartilesFound ? 'Genius!' : 'Puzzle Complete!'}
+              {rank}!
             </h2>
             <p className="text-white/80 mt-1">
-              {allQuartilesFound
+              {quartilesFound === 5
                 ? 'You found all the Quartiles!'
                 : 'Great job completing the puzzle!'}
             </p>
@@ -146,7 +170,9 @@ export function GameComplete() {
 
             <button
               type="button"
-              onClick={handleShare}
+              onClick={() => {
+                void handleShare();
+              }}
               className={cn(
                 'px-4 py-3 rounded-xl font-semibold',
                 'bg-gray-100 text-gray-700 border border-gray-200',
