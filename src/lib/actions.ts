@@ -1,8 +1,10 @@
 "use server";
 
+import { unstable_cache } from "next/cache";
 import { headers } from "next/headers";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import { singleFlight } from "./daily-cache";
 import { Puzzle } from "./types";
 import {
   AIWordData,
@@ -32,22 +34,7 @@ interface AIResponse {
  * Falls back to a local puzzle when the key is missing or AI fails —
  * so CI/SSG never hard-fail on empty secrets.
  */
-export async function generatePuzzle(theme?: string): Promise<Puzzle> {
-  const sanitized = sanitizeTheme(theme);
-  // Invalid non-empty theme → reject (server-side contract)
-  if (theme !== undefined && theme !== null && theme !== "" && sanitized === null) {
-    throw new Error("Invalid theme");
-  }
-  const puzzleTheme = sanitized || getRandomTheme();
-  const headerList = await headers();
-  const caller = clientAddress(
-    headerList.get("x-forwarded-for"),
-    headerList.get("x-real-ip")
-  );
-  if (!consumeRateLimit(`puzzle:${caller}`)) {
-    throw new Error("Too many puzzles. Please wait a few minutes and try again.");
-  }
-
+async function generatePuzzleForTheme(puzzleTheme: string): Promise<Puzzle> {
   if (!process.env.OPENAI_API_KEY) {
     return getFallbackPuzzle(puzzleTheme);
   }
@@ -108,10 +95,45 @@ Just give me 5 words related to "${puzzleTheme}". I will split them into chunks 
   return getFallbackPuzzle(puzzleTheme);
 }
 
-/** Daily puzzle — same theme seed for everyone on the same UTC date. */
+/**
+ * Generate a Quartiles puzzle using AI when OPENAI_API_KEY is set.
+ * Falls back to a local puzzle when the key is missing or AI fails —
+ * so CI/SSG never hard-fail on empty secrets.
+ */
+export async function generatePuzzle(theme?: string): Promise<Puzzle> {
+  const sanitized = sanitizeTheme(theme);
+  // Invalid non-empty theme → reject (server-side contract)
+  if (theme !== undefined && theme !== null && theme !== "" && sanitized === null) {
+    throw new Error("Invalid theme");
+  }
+  const puzzleTheme = sanitized || getRandomTheme();
+  const headerList = await headers();
+  const caller = clientAddress(
+    headerList.get("x-forwarded-for"),
+    headerList.get("x-real-ip")
+  );
+  if (!consumeRateLimit(`puzzle:${caller}`)) {
+    throw new Error("Too many puzzles. Please wait a few minutes and try again.");
+  }
+
+  return generatePuzzleForTheme(puzzleTheme);
+}
+
+const DAILY_REVALIDATE_SECONDS = 60 * 60 * 24;
+const dailyFlights = new Map<string, Promise<Puzzle>>();
+
+const loadCachedDailyPuzzle = unstable_cache(
+  async (date: string) => {
+    const theme = getDailyTheme(date);
+    const puzzle = await generatePuzzleForTheme(theme);
+    return withDailyIdentity(puzzle, date, theme);
+  },
+  ["daily-puzzle-v1"],
+  { revalidate: DAILY_REVALIDATE_SECONDS }
+);
+
+/** One shared board per UTC date. Later callers reuse the cached puzzle. */
 export async function generateDailyPuzzle(): Promise<Puzzle> {
   const today = getTodayDateString();
-  const dailyTheme = getDailyTheme(today);
-  const puzzle = await generatePuzzle(dailyTheme);
-  return withDailyIdentity(puzzle, today, dailyTheme);
+  return singleFlight(dailyFlights, today, () => loadCachedDailyPuzzle(today));
 }
