@@ -73,6 +73,13 @@ function createTilesFromPuzzle(puzzle: Puzzle): Tile[] {
   }));
 }
 
+function clearedTiles(tiles: Tile[]) {
+  return {
+    selectedTileIds: [] as string[],
+    tiles: tiles.map((tile) => ({ ...tile, isSelected: false })),
+  };
+}
+
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -211,10 +218,10 @@ export const useGameStore = create<GameStore>()(
         const alreadyFound = foundWords.some(fw => fw.word === currentWord);
         if (alreadyFound) {
           set({
+            ...clearedTiles(tiles),
             lastAttemptedWord: currentWord,
             lastAttemptResult: 'already-found',
           });
-          get().clearSelection();
           return;
         }
 
@@ -295,10 +302,10 @@ export const useGameStore = create<GameStore>()(
           });
         } else {
           set({
+            ...clearedTiles(tiles),
             lastAttemptedWord: currentWord,
             lastAttemptResult: 'incorrect',
           });
-          get().clearSelection();
         }
       },
 
