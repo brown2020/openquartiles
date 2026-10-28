@@ -9,6 +9,7 @@ import { ScoreDisplay } from './ScoreDisplay';
 import { FoundWordsList } from './FoundWordsList';
 import { HowToPlayModal } from './HowToPlayModal';
 import { GameComplete } from './GameComplete';
+import { puzzleThemeLabel } from '@/lib/puzzle';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -18,16 +19,18 @@ interface ActiveGameProps {
 }
 
 export function ActiveGame({ loading, onNewGame }: ActiveGameProps) {
-  const { puzzle, setShowHowToPlay, resetGame } = useGameStore();
+  const { puzzle, error, setShowHowToPlay, resetGame } = useGameStore();
 
   if (!puzzle) return null;
+
+  const themeLabel = puzzleThemeLabel(puzzle);
 
   return (
     <div className="w-full max-w-lg mx-auto px-4 py-6 space-y-4">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">OpenQuartiles</h1>
-          {puzzle.theme && <p className="text-sm text-gray-500">{puzzle.theme}</p>}
+          {themeLabel && <p className="text-sm text-gray-500">{themeLabel}</p>}
         </div>
 
         <div className="flex items-center gap-2">
@@ -80,6 +83,15 @@ export function ActiveGame({ loading, onNewGame }: ActiveGameProps) {
           </button>
         </div>
       </header>
+
+      {error && (
+        <div
+          className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm"
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
 
       <ScoreDisplay />
       <WordBuilder />

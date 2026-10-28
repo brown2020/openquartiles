@@ -3,9 +3,12 @@ import { describe, it } from "node:test";
 import {
   buildPuzzleFromWords,
   getFallbackPuzzle,
+  normalizeAiWords,
   pointsForTileCount,
+  puzzleThemeLabel,
   sanitizeTheme,
   smartSplitWord,
+  withDailyIdentity,
 } from "./puzzle";
 import { calculateRank, SCORING } from "./types";
 
@@ -64,6 +67,39 @@ describe("buildPuzzleFromWords / fallback", () => {
     const puzzle = buildPuzzleFromWords("demo", words);
     assert.equal(puzzle.theme, "demo");
     assert.equal(puzzle.quartiles.every((q) => q.isQuartile), true);
+  });
+});
+
+describe("normalizeAiWords", () => {
+  it("drops duplicates, short words, and words longer than 12 letters", () => {
+    const words = normalizeAiWords([
+      { word: "adventure" },
+      { word: "ADVENTURE" },
+      { word: "tiny" },
+      { word: "SUPERCALIFRAGILISTIC" },
+      { word: "discovery" },
+      { word: "beautiful" },
+      { word: "wonderful" },
+      { word: "fantastic" },
+      { word: 12 },
+    ]);
+    assert.deepEqual(
+      words.map((word) => word.word),
+      ["ADVENTURE", "DISCOVERY", "BEAUTIFUL", "WONDERFUL", "FANTASTIC"]
+    );
+    assert.ok(words.every((word) => word.chunks.length === 4));
+  });
+});
+
+describe("daily theme identity", () => {
+  it("keeps a regenerable theme and labels the daily board separately", () => {
+    const puzzle = withDailyIdentity(getFallbackPuzzle("nature"), "2026-10-28", "nature");
+    assert.equal(puzzle.theme, "nature");
+    assert.equal(puzzle.id, "daily-2026-10-28");
+    assert.equal(sanitizeTheme(puzzle.theme), "nature");
+    assert.equal(sanitizeTheme("Daily: nature"), null);
+    assert.equal(puzzleThemeLabel(puzzle), "Daily: nature");
+    assert.equal(puzzleThemeLabel({ id: "custom", theme: "food" }), "food");
   });
 });
 

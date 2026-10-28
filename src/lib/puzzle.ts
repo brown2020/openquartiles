@@ -225,6 +225,51 @@ export function getRandomTheme(): string {
   return DAILY_THEMES[Math.floor(Math.random() * DAILY_THEMES.length)];
 }
 
+const MIN_WORD_LENGTH = 8;
+const MAX_WORD_LENGTH = 12;
+
+/**
+ * Keep up to five distinct 8–12 letter words. Chunks are recomputed here so a
+ * repeated or oversized model word cannot produce an unwinnable board.
+ */
+export function normalizeAiWords(words: unknown): AIWordData[] {
+  if (!Array.isArray(words)) return [];
+  const validated: AIWordData[] = [];
+  const seen = new Set<string>();
+
+  for (const wordData of words.slice(0, 20)) {
+    if (!wordData || typeof wordData !== "object") continue;
+    const raw = (wordData as { word?: unknown }).word;
+    if (typeof raw !== "string") continue;
+    const word = raw.toUpperCase().replace(/[^A-Z]/g, "");
+    if (word.length < MIN_WORD_LENGTH || word.length > MAX_WORD_LENGTH) continue;
+    if (seen.has(word)) continue;
+    const chunks = smartSplitWord(word);
+    if (chunks.length !== 4 || chunks.join("") !== word) continue;
+    seen.add(word);
+    validated.push({ word, chunks });
+    if (validated.length === 5) break;
+  }
+
+  return validated;
+}
+
+/** Daily boards keep the raw theme so "new puzzle" can pass sanitizeTheme. */
+export function withDailyIdentity(puzzle: Puzzle, date: string, theme: string): Puzzle {
+  return {
+    ...puzzle,
+    id: `daily-${date}`,
+    date,
+    theme,
+  };
+}
+
+/** UI label. The stored theme stays free of characters sanitizeTheme rejects. */
+export function puzzleThemeLabel(puzzle: { id: string; theme?: string }): string | null {
+  if (!puzzle.theme) return null;
+  return puzzle.id.startsWith("daily-") ? `Daily: ${puzzle.theme}` : puzzle.theme;
+}
+
 /** Points for a submitted tile count (mirrors store scoring). */
 export function pointsForTileCount(tileCount: number): number {
   if (tileCount >= 4) return 8;

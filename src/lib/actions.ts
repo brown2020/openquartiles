@@ -11,8 +11,9 @@ import {
   getFallbackPuzzle,
   getRandomTheme,
   getTodayDateString,
+  normalizeAiWords,
   sanitizeTheme,
-  smartSplitWord,
+  withDailyIdentity,
 } from "./puzzle";
 import { clientAddress, consumeRateLimit } from "./rate-limit";
 
@@ -89,20 +90,7 @@ Just give me 5 words related to "${puzzleTheme}". I will split them into chunks 
 
       const cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
       const data = JSON.parse(cleanText) as AIResponse;
-
-      if (!data.theme || !Array.isArray(data.words) || data.words.length < 5) {
-        throw new Error("Invalid response structure");
-      }
-
-      const validatedWords: AIWordData[] = [];
-      for (const wordData of data.words.slice(0, 5)) {
-        if (!wordData.word) continue;
-        const word = wordData.word.toUpperCase().replace(/[^A-Z]/g, "");
-        if (word.length < 8) continue;
-        const chunks = smartSplitWord(word);
-        if (chunks.join("") !== word) continue;
-        validatedWords.push({ word, chunks });
-      }
+      const validatedWords = normalizeAiWords(data?.words);
 
       if (validatedWords.length < 5) {
         throw new Error(`Only got ${validatedWords.length} valid words`);
@@ -125,10 +113,5 @@ export async function generateDailyPuzzle(): Promise<Puzzle> {
   const today = getTodayDateString();
   const dailyTheme = getDailyTheme(today);
   const puzzle = await generatePuzzle(dailyTheme);
-  return {
-    ...puzzle,
-    id: `daily-${today}`,
-    date: today,
-    theme: `Daily: ${dailyTheme}`,
-  };
+  return withDailyIdentity(puzzle, today, dailyTheme);
 }
