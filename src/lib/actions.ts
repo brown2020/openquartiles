@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { Puzzle } from "./types";
@@ -13,8 +14,12 @@ import {
   sanitizeTheme,
   smartSplitWord,
 } from "./puzzle";
+import { clientAddress, consumeRateLimit } from "./rate-limit";
 
-const MAX_RETRIES = 5;
+/** Two model calls at most. The SDK's own retries are disabled below. */
+const MAX_RETRIES = 2;
+const MODEL_TIMEOUT_MS = 10_000;
+const MAX_OUTPUT_TOKENS = 500;
 
 interface AIResponse {
   theme: string;
@@ -33,6 +38,14 @@ export async function generatePuzzle(theme?: string): Promise<Puzzle> {
     throw new Error("Invalid theme");
   }
   const puzzleTheme = sanitized || getRandomTheme();
+  const headerList = await headers();
+  const caller = clientAddress(
+    headerList.get("x-forwarded-for"),
+    headerList.get("x-real-ip")
+  );
+  if (!consumeRateLimit(`puzzle:${caller}`)) {
+    throw new Error("Too many puzzles. Please wait a few minutes and try again.");
+  }
 
   if (!process.env.OPENAI_API_KEY) {
     return getFallbackPuzzle(puzzleTheme);
@@ -47,6 +60,9 @@ export async function generatePuzzle(theme?: string): Promise<Puzzle> {
 
       const { text } = await generateText({
         model,
+        maxRetries: 0,
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+        timeout: MODEL_TIMEOUT_MS,
         system:
           "You are a word game assistant. Generate 5 themed English words. Return ONLY valid JSON.",
         prompt: `Generate 5 common English words related to "${puzzleTheme}".

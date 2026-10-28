@@ -31,5 +31,8 @@ describe("route security", () => {
     assert.match(actions, /["']use server["']/);
     assert.match(actions, /OPENAI_API_KEY/);
     assert.match(actions, /sanitizeTheme/);
+    assert.match(actions, /maxRetries:\s*0/);
+    assert.match(actions, /timeout:\s*MODEL_TIMEOUT_MS/);
+    assert.match(actions, /consumeRateLimit/);
   });
 });
