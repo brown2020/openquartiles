@@ -1,55 +1,59 @@
 # OpenQuartiles
 
-A Quartiles-style word puzzle: combine letter tiles to form words, find all five four-tile “Quartiles,” and climb ranks from Beginner toward Genius. Play a daily themed puzzle or generate a custom theme. Live demo: [openquartiles.vercel.app](https://openquartiles.vercel.app/).
+A Quartiles-style word puzzle. Combine letter tiles into words, find all five four-tile Quartiles, and climb from Beginner toward Genius. Play the shared daily board or generate a custom theme. Live demo: [openquartiles.vercel.app](https://openquartiles.vercel.app/).
 
 ## Features
 
-Verified from the current codebase:
-
-- Daily puzzle (one cached board per UTC date) and custom/random theme play
-- Tile selection, word builder, shuffle, hints, scoring, and rank calculation
-- Quartiles (4-tile solutions) plus shorter valid combinations against a common-word list
-- Welcome screen, how-to-play modal, found-words list, game-complete view
-- Stats persistence (streaks, best score, games played) via Zustand `persist` → `localStorage`
-- Server actions `generatePuzzle` / `generateDailyPuzzle` using OpenAI (`gpt-4.1`) when `OPENAI_API_KEY` is set; otherwise a local fallback puzzle
-- Solution words are sealed in `answerToken` and graded by `gradeWord` (set `PUZZLE_TOKEN_SECRET` in production)
-- Theme sanitization on the server (`sanitizeTheme`)
+- Daily puzzle: one board per UTC date, cached for 24 hours
+- Custom theme or a random theme from the built-in list
+- Tile selection (up to 4), reorder, shuffle, hints, and submit
+- Shorter words score points; Quartiles score more and remove their tiles
+- Ranks from Beginner through Genius, with a +40 bonus for all five Quartiles
+- Welcome screen, how-to-play dialog, found-words list, and game-complete dialog
+- Stats (streak, best score, games) in `localStorage` under `quartiles-storage`
+- Server actions for generation, grading, and hints. Solution words stay in a sealed `answerToken`
+- OpenAI (`gpt-4.1` via `@ai-sdk/openai`) when `OPENAI_API_KEY` is set; otherwise a local fallback board
+- Theme allowlist on the server (`sanitizeTheme`)
+- Security headers (CSP, frame denial, nosniff, referrer policy, HSTS)
 - Static About page at `/about`
 
 ## Tech stack
 
-| Area | Choice | Version (package.json) |
+| Area | Choice | Version (`package.json`) |
 | --- | --- | --- |
-| Framework | Next.js (App Router) | ^16.3.6 |
-| UI | React | ^19.3.0 |
-| Language | TypeScript | ^6 |
+| Framework | Next.js (App Router) | ^16.4.3 |
+| UI | React | ^19.3.1 |
+| Language | TypeScript | ^6.0.3 |
 | Styling | Tailwind CSS + animate plugin | ^4.3.3 |
-| UI primitives | Radix Slot/Toast, CVA, Lucide | — |
-| State | Zustand | ^5.0.15 |
-| AI | Vercel AI SDK + `@ai-sdk/openai` | ai ^6.0.288 |
-| Validation / helpers | Zod | ^4.6.5 |
-| Lint / test | ESLint 10, Node test runner + `tsx` | — |
+| UI primitives | Radix Slot/Toast, CVA, Lucide | Lucide ^1.63.0 |
+| State | Zustand | ^5.0.16 |
+| AI | Vercel AI SDK + `@ai-sdk/openai` | ai ^7.0.156, `@ai-sdk/openai` ^4.0.104 |
+| Validation helper | Zod | ^4.6.7 |
+| Lint / test | ESLint ^10.13.0, Node test runner + `tsx` ^4.23.15 | — |
 
-No Firebase, Stripe, or client-exposed API keys.
+No Firebase, Stripe, or `NEXT_PUBLIC_` secrets. Model id stays `gpt-4.1`.
 
 ## Project structure
 
 ```
 src/
   app/
-    page.tsx              # GameArea
+    page.tsx              # Game
     about/page.tsx
     layout.tsx
-  components/game/        # Welcome, board, tiles, scoring, modals, …
-  components/ui/          # Toast
+  components/game/        # Board, tiles, scoring, dialogs
+  components/ui/          # Toast primitives
   stores/gameStore.ts
   hooks/
   lib/
-    actions.ts            # "use server" puzzle generation
-    puzzle.ts             # Pure helpers + fallback
+    actions.ts            # "use server" generate, grade, hint
+    puzzle.ts             # Split, fallback, theme rules
+    puzzle-token.ts       # Seal and grade answer tokens
+    rate-limit.ts
     types.ts
     *.test.ts
-docs/
+spec.md
+roadmap.md
 .env.example
 .github/workflows/ci.yml
 ```
@@ -58,24 +62,26 @@ docs/
 
 ### Prerequisites
 
-- Node.js 22 (matches CI) or a current LTS
+- Node.js 22 (matches CI)
 - npm
-- OpenAI API key (optional; fallback puzzles work without it)
 
 ### Clone and install
 
 ```bash
 git clone https://github.com/brown2020/openquartiles.git
 cd openquartiles
+git checkout dev
 npm install
 ```
 
 ### Environment variables
 
-| Name | Purpose | Where to get it |
+Names only. Put values in `.env.local` (gitignored). Never commit them.
+
+| Name | Required | Purpose |
 | --- | --- | --- |
-| `OPENAI_API_KEY` | Server-only key for AI puzzle generation. Optional; missing key → `getFallbackPuzzle`. | [OpenAI API keys](https://platform.openai.com/api-keys) |
-| `PUZZLE_TOKEN_SECRET` | Server-only key that seals solution words. Optional; at least 16 characters in production. When unset, a built-in development key is used and the game still plays. | Generate a random string locally. Do not commit it. |
+| `OPENAI_API_KEY` | No | Server-only key for themed puzzle generation. Missing or empty → local fallback board. |
+| `PUZZLE_TOKEN_SECRET` | No | Server-only key (at least 16 characters) that seals solution words. Missing → built-in development key; the game still plays. |
 
 `.env.example`:
 
@@ -83,8 +89,6 @@ npm install
 OPENAI_API_KEY=
 PUZZLE_TOKEN_SECRET=
 ```
-
-Put real values only in `.env.local` (gitignored). Never commit keys.
 
 ### Run locally
 
@@ -99,7 +103,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | Script | Description |
 | --- | --- |
 | `npm run dev` | Next.js development server |
-| `npm run build` | Production build |
+| `npm run build` | Production build (succeeds with both env vars unset) |
 | `npm start` | Serve the production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
@@ -108,18 +112,19 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Testing and CI
 
-- Tests: `src/lib/puzzle.test.ts`, `src/lib/routes.test.ts`.
-- CI: install with `--ignore-scripts`, lint, typecheck, test, then build with optional `OPENAI_API_KEY` from Actions secrets (Node 22). Build tolerates a missing key via deferred OpenAI init + fallback puzzle.
+Tests live next to the modules they cover (`src/**/*.test.ts`): puzzle rules, answer tokens, rate limits, daily cache dedupe, streaks, stats sanitizing, security headers, route checks, and guess feedback.
+
+CI (`.github/workflows/ci.yml`) on `dev` and `main`: `npm ci --ignore-scripts`, lint, typecheck, test, then `npm run build` with no secrets. Node 22.
 
 ## Deployment
 
-Standard Next.js deploy (demo: [openquartiles.vercel.app](https://openquartiles.vercel.app/). Set `OPENAI_API_KEY` in the host environment for AI-generated puzzles, and set `PUZZLE_TOKEN_SECRET` so answer tokens are not sealed with the built-in development key.
+Standard Next.js deploy. The demo is [openquartiles.vercel.app](https://openquartiles.vercel.app/). Set `OPENAI_API_KEY` on the host for AI boards, and set `PUZZLE_TOKEN_SECRET` so production tokens are not sealed with the built-in development key.
 
 ## Contributing
 
 1. Branch from `dev`.
-2. Run lint, typecheck, and tests before opening a PR.
-3. Keep `OPENAI_API_KEY` server-only; do not add `NEXT_PUBLIC_*` secrets.
+2. Run lint, typecheck, tests, and a production build before opening a PR.
+3. Keep secrets server-only. Do not add `NEXT_PUBLIC_` secrets or change the model id.
 
 ## License
 

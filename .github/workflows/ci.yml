@@ -22,9 +22,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      # Expose server secrets only for the production build step.
-      # Tolerate missing secrets: deferred OpenAI init + fallback puzzle.
+      # Production build with no secrets. Puzzle generation reads env at runtime
+      # and falls back when OPENAI_API_KEY / PUZZLE_TOKEN_SECRET are unset.
       - name: Production build
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm run build
