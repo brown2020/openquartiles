@@ -44,7 +44,8 @@ export default function AboutPage() {
           <h2 className="text-lg font-semibold text-gray-900">Privacy &amp; trust</h2>
           <p className="text-gray-600">
             There is no sign-in. Puzzle generation runs as a Next.js server action;
-            the OpenAI key never reaches the browser. Invalid themes are rejected
+            the OpenAI key never reaches the browser. Solution words stay sealed on
+            the server and guesses are checked there. Invalid themes are rejected
             server-side. There is no public score-write API — unauthorized{" "}
             <code className="text-sm bg-gray-100 px-1 rounded">/api/*</code>{" "}
             mutations return 404.

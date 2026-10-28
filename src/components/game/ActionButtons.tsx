@@ -13,6 +13,7 @@ export function ActionButtons() {
     shuffleTiles,
     getHint,
     hintsUsed,
+    isGrading,
   } = useGameStore();
 
   const [currentHint, setCurrentHint] = useState<string | null>(null);
@@ -25,15 +26,16 @@ export function ActionButtons() {
   }, []);
 
   const hasSelection = selectedTileIds.length > 0;
-  const canSubmit = selectedTileIds.length >= 1;
+  const canSubmit = selectedTileIds.length >= 1 && !isGrading;
 
   const handleHint = () => {
-    const hint = getHint();
-    if (hint) {
+    void (async () => {
+      const hint = await getHint();
+      if (!hint) return;
       setCurrentHint(hint);
       if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
       hintTimeoutRef.current = setTimeout(() => setCurrentHint(null), 5000);
-    }
+    })();
   };
 
   const dismissHint = () => {

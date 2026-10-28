@@ -1,20 +1,21 @@
 // src/stores/gameStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { gradeWord, revealHint } from '@/lib/actions';
 import { 
   Tile, 
   FoundWord, 
-  Puzzle, 
+  ClientPuzzle, 
   GameStats, 
   calculateRank, 
   SCORING,
   Rank,
-  ValidWord
 } from '@/lib/types';
 
 interface GameStore {
   // Game state
-  puzzle: Puzzle | null;
+  puzzle: ClientPuzzle | null;
+  isGrading: boolean;
   tiles: Tile[];
   selectedTileIds: string[];
   foundWords: FoundWord[];
@@ -33,7 +34,7 @@ interface GameStore {
   stats: GameStats;
   
   // Actions
-  initializePuzzle: (puzzle: Puzzle) => void;
+  initializePuzzle: (puzzle: ClientPuzzle) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setInputTheme: (theme: string) => void;
@@ -41,14 +42,13 @@ interface GameStore {
   deselectTile: (tileId: string) => void;
   clearSelection: () => void;
   reorderSelectedTiles: (newOrder: string[]) => void;
-  submitWord: () => void;
+  submitWord: () => Promise<void>;
   shuffleTiles: () => void;
-  getHint: () => string | null;
+  getHint: () => Promise<string | null>;
   resetGame: () => void;
   setShowHowToPlay: (show: boolean) => void;
   getCurrentWord: () => string;
   getRank: () => Rank;
-  getUnfoundQuartiles: () => ValidWord[];
 }
 
 const initialStats: GameStats = {
@@ -63,7 +63,7 @@ const initialStats: GameStats = {
   rankHistory: [],
 };
 
-function createTilesFromPuzzle(puzzle: Puzzle): Tile[] {
+function createTilesFromPuzzle(puzzle: ClientPuzzle): Tile[] {
   return puzzle.tiles.map((text, index) => ({
     id: `tile-${index}`,
     text,
@@ -94,6 +94,7 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       // Initial state
       puzzle: null,
+      isGrading: false,
       tiles: [],
       selectedTileIds: [],
       foundWords: [],
@@ -109,11 +110,12 @@ export const useGameStore = create<GameStore>()(
       inputTheme: '',
       stats: initialStats,
 
-      initializePuzzle: (puzzle: Puzzle) => {
+      initializePuzzle: (puzzle: ClientPuzzle) => {
         const tiles = createTilesFromPuzzle(puzzle);
         
         set({
           puzzle,
+          isGrading: false,
           tiles: shuffleArray(tiles),
           selectedTileIds: [],
           foundWords: [],
@@ -198,19 +200,10 @@ export const useGameStore = create<GameStore>()(
           .join('');
       },
 
-      getUnfoundQuartiles: () => {
-        const { puzzle, foundWords } = get();
-        if (!puzzle) return [];
-        
-        return puzzle.quartiles.filter(
-          q => !foundWords.some(fw => fw.word === q.word)
-        );
-      },
+      submitWord: async () => {
+        const { puzzle, tiles, selectedTileIds, foundWords, isGrading } = get();
 
-      submitWord: () => {
-        const { puzzle, tiles, selectedTileIds, foundWords, score, quartilesFound, stats } = get();
-
-        if (!puzzle || selectedTileIds.length < 1) return;
+        if (!puzzle || selectedTileIds.length < 1 || isGrading) return;
 
         const currentWord = get().getCurrentWord();
         
@@ -225,88 +218,102 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
-        // Check if valid word - match by word text only
-        const validWord = puzzle.validWords.find(vw => vw.word === currentWord);
-        
-        // Calculate tile count and points dynamically
-        const tileCount = selectedTileIds.length;
-        const points = tileCount >= 4 ? SCORING.FOUR_TILES :
-                      tileCount === 3 ? SCORING.THREE_TILES :
-                      tileCount === 2 ? SCORING.TWO_TILES :
-                      SCORING.ONE_TILE;
-        const isQuartile = tileCount >= 4;
+        const token = puzzle.answerToken;
+        const selectedIds = [...selectedTileIds];
+        set({ isGrading: true, error: null });
 
-        if (validWord) {
-          const newFoundWord: FoundWord = {
-            word: currentWord,
-            tileIds: [...selectedTileIds],
-            tileCount,
-            points,
-            isQuartile,
-            foundAt: Date.now(),
-          };
-          
-          const newFoundWords = [...foundWords, newFoundWord];
-          const newScore = score + points;
-          const newQuartilesFound = quartilesFound + (isQuartile ? 1 : 0);
-          
-          // Check for all quartiles bonus
-          let bonusScore = 0;
-          if (newQuartilesFound === 5 && quartilesFound < 5) {
-            bonusScore = SCORING.ALL_QUARTILES_BONUS;
-          }
-          
-          const finalScore = newScore + bonusScore;
-          
-          // Only mark tiles as used for quartiles (4-tile words)
-          // Shorter words score points but don't remove tiles
-          const selectedSet = new Set(selectedTileIds);
-          const newTiles = isQuartile
-            ? tiles.map((t) =>
-                selectedSet.has(t.id)
-                  ? { ...t, isUsed: true, isSelected: false }
-                  : t
-              )
-            : tiles.map((t) => ({ ...t, isSelected: false }));
-          
-          // Check if game is complete (all quartiles found)
-          const isComplete = newQuartilesFound === 5;
-          
-          // Update stats if complete
-          let newStats = stats;
-          if (isComplete) {
-            newStats = {
-              ...stats,
-              gamesPlayed: stats.gamesPlayed + 1,
-              gamesCompleted: stats.gamesCompleted + 1,
-              totalScore: stats.totalScore + finalScore,
-              bestScore: Math.max(stats.bestScore, finalScore),
-              quartilesFound: stats.quartilesFound + newQuartilesFound,
-              currentStreak: stats.currentStreak + 1,
-              longestStreak: Math.max(stats.longestStreak, stats.currentStreak + 1),
-              lastPlayedDate: new Date().toISOString().split('T')[0],
-              rankHistory: [...stats.rankHistory, calculateRank(finalScore, newQuartilesFound)],
-            };
-          }
+        let grade;
+        try {
+          grade = await gradeWord(token, currentWord);
+        } catch {
+          set({ isGrading: false, error: 'Could not check that word. Try again.' });
+          return;
+        }
 
+        const latest = get();
+        if (!latest.puzzle || latest.puzzle.answerToken !== token) {
+          set({ isGrading: false });
+          return;
+        }
+
+        if (grade.status === 'limited') {
           set({
-            tiles: newTiles,
-            selectedTileIds: [],
-            foundWords: newFoundWords,
-            score: finalScore,
-            quartilesFound: newQuartilesFound,
-            isComplete,
-            lastAttemptedWord: currentWord,
-            lastAttemptResult: 'correct',
-            stats: newStats,
+            isGrading: false,
+            error: 'Too many checks. Please wait a moment and try again.',
           });
-        } else {
+          return;
+        }
+
+        if (grade.status !== 'correct') {
           set({
-            ...clearedTiles(tiles),
+            ...clearedTiles(latest.tiles),
             lastAttemptedWord: currentWord,
             lastAttemptResult: 'incorrect',
+            isGrading: false,
+            error: null,
           });
+          return;
         }
+
+        const { points, isQuartile, tileCount } = grade;
+        const newFoundWord: FoundWord = {
+          word: currentWord,
+          tileIds: selectedIds,
+          tileCount,
+          points,
+          isQuartile,
+          foundAt: Date.now(),
+        };
+
+        const newFoundWords = [...latest.foundWords, newFoundWord];
+        const newScore = latest.score + points;
+        const newQuartilesFound = latest.quartilesFound + (isQuartile ? 1 : 0);
+
+        let bonusScore = 0;
+        if (newQuartilesFound === 5 && latest.quartilesFound < 5) {
+          bonusScore = SCORING.ALL_QUARTILES_BONUS;
+        }
+
+        const finalScore = newScore + bonusScore;
+        const selectedSet = new Set(selectedIds);
+        const newTiles = isQuartile
+          ? latest.tiles.map((t) =>
+              selectedSet.has(t.id)
+                ? { ...t, isUsed: true, isSelected: false }
+                : t
+            )
+          : latest.tiles.map((t) => ({ ...t, isSelected: false }));
+
+        const isComplete = newQuartilesFound === 5;
+        let newStats = latest.stats;
+        if (isComplete) {
+          newStats = {
+            ...latest.stats,
+            gamesPlayed: latest.stats.gamesPlayed + 1,
+            gamesCompleted: latest.stats.gamesCompleted + 1,
+            totalScore: latest.stats.totalScore + finalScore,
+            bestScore: Math.max(latest.stats.bestScore, finalScore),
+            quartilesFound: latest.stats.quartilesFound + newQuartilesFound,
+            currentStreak: latest.stats.currentStreak + 1,
+            longestStreak: Math.max(latest.stats.longestStreak, latest.stats.currentStreak + 1),
+            lastPlayedDate: new Date().toISOString().split('T')[0],
+            rankHistory: [...latest.stats.rankHistory, calculateRank(finalScore, newQuartilesFound)],
+          };
+        }
+
+        set({
+          tiles: newTiles,
+          selectedTileIds: [],
+          foundWords: newFoundWords,
+          score: finalScore,
+          quartilesFound: newQuartilesFound,
+          isComplete,
+          lastAttemptedWord: currentWord,
+          lastAttemptResult: 'correct',
+          stats: newStats,
+          isGrading: false,
+          error: null,
+        });
       },
 
       shuffleTiles: () => {
@@ -335,24 +342,29 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      getHint: () => {
-        const { hintsUsed } = get();
-        const unfound = get().getUnfoundQuartiles();
-        
-        if (unfound.length === 0) return null;
-        
-        // Get a random unfound quartile
-        const hintWord = unfound[Math.floor(Math.random() * unfound.length)];
-        
-        set({ hintsUsed: hintsUsed + 1 });
-        
-        // Return first few letters as hint
-        return hintWord.word.substring(0, 4) + '...';
+      getHint: async () => {
+        const { puzzle, foundWords, hintsUsed } = get();
+        if (!puzzle) return null;
+        const found = foundWords.filter((word) => word.isQuartile).map((word) => word.word);
+        try {
+          const result = await revealHint(puzzle.answerToken, found);
+          if (result.limited) {
+            set({ error: 'Too many hints. Please wait a moment and try again.' });
+            return null;
+          }
+          if (!result.hint) return null;
+          set({ hintsUsed: hintsUsed + 1, error: null });
+          return result.hint;
+        } catch {
+          set({ error: 'Could not load a hint. Try again.' });
+          return null;
+        }
       },
 
       resetGame: () => {
         set({
           puzzle: null,
+          isGrading: false,
           tiles: [],
           selectedTileIds: [],
           foundWords: [],

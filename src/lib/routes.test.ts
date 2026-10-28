@@ -34,5 +34,10 @@ describe("route security", () => {
     assert.match(actions, /maxRetries:\s*0/);
     assert.match(actions, /timeout:\s*MODEL_TIMEOUT_MS/);
     assert.match(actions, /consumeRateLimit/);
+    assert.match(actions, /sealPuzzle/);
+    assert.match(actions, /gradeWord/);
+    const token = fs.readFileSync(path.join(here, "puzzle-token.ts"), "utf8");
+    assert.match(token, /PUZZLE_TOKEN_SECRET/);
+    assert.match(token, /aes-256-gcm/);
   });
 });

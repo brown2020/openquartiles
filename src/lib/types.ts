@@ -48,6 +48,18 @@ export interface Puzzle {
 }
 
 /**
+ * Puzzle sent to the browser. Solution words stay inside `answerToken`.
+ */
+export interface ClientPuzzle {
+  id: string;
+  date: string;
+  tiles: string[];
+  maxScore: number;
+  theme?: string;
+  answerToken: string;
+}
+
+/**
  * Game statistics for persistence
  */
 export interface GameStats {

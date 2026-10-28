@@ -6,12 +6,13 @@ A Quartiles-style word puzzle: combine letter tiles to form words, find all five
 
 Verified from the current codebase:
 
-- Daily puzzle (theme seeded by UTC date) and custom/random theme play
+- Daily puzzle (one cached board per UTC date) and custom/random theme play
 - Tile selection, word builder, shuffle, hints, scoring, and rank calculation
 - Quartiles (4-tile solutions) plus shorter valid combinations against a common-word list
 - Welcome screen, how-to-play modal, found-words list, game-complete view
 - Stats persistence (streaks, best score, games played) via Zustand `persist` → `localStorage`
 - Server actions `generatePuzzle` / `generateDailyPuzzle` using OpenAI (`gpt-4.1`) when `OPENAI_API_KEY` is set; otherwise a local fallback puzzle
+- Solution words are sealed in `answerToken` and graded by `gradeWord` (set `PUZZLE_TOKEN_SECRET` in production)
 - Theme sanitization on the server (`sanitizeTheme`)
 - Static About page at `/about`
 
@@ -74,11 +75,13 @@ npm install
 | Name | Purpose | Where to get it |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | Server-only key for AI puzzle generation. Optional; missing key → `getFallbackPuzzle`. | [OpenAI API keys](https://platform.openai.com/api-keys) |
+| `PUZZLE_TOKEN_SECRET` | Server-only key that seals solution words. Optional; at least 16 characters in production. When unset, a built-in development key is used and the game still plays. | Generate a random string locally. Do not commit it. |
 
 `.env.example`:
 
 ```bash
 OPENAI_API_KEY=
+PUZZLE_TOKEN_SECRET=
 ```
 
 Put real values only in `.env.local` (gitignored). Never commit keys.
@@ -110,7 +113,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Deployment
 
-Standard Next.js deploy (demo: [openquartiles.vercel.app](https://openquartiles.vercel.app/). Set `OPENAI_API_KEY` in the host environment for AI-generated puzzles.
+Standard Next.js deploy (demo: [openquartiles.vercel.app](https://openquartiles.vercel.app/). Set `OPENAI_API_KEY` in the host environment for AI-generated puzzles, and set `PUZZLE_TOKEN_SECRET` so answer tokens are not sealed with the built-in development key.
 
 ## Contributing
 
