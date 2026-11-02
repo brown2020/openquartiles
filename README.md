@@ -25,11 +25,11 @@ A Quartiles-style word puzzle. Combine letter tiles into words, find all five fo
 | UI | React | ^19.3.1 |
 | Language | TypeScript | ^6.0.3 |
 | Styling | Tailwind CSS + animate plugin | ^4.3.3 |
-| UI primitives | Radix Slot/Toast, CVA, Lucide | Lucide ^1.63.0 |
+| UI primitives | Radix Slot/Toast, CVA, Lucide | Lucide ^1.66.0 |
 | State | Zustand | ^5.0.16 |
-| AI | Vercel AI SDK + `@ai-sdk/openai` | ai ^7.0.156, `@ai-sdk/openai` ^4.0.104 |
+| AI | Vercel AI SDK + `@ai-sdk/openai` | ai ^7.0.159, `@ai-sdk/openai` ^4.0.106 |
 | Validation helper | Zod | ^4.6.7 |
-| Lint / test | ESLint ^10.13.0, Node test runner + `tsx` ^4.23.15 | — |
+| Lint / test | ESLint ^10.14.0, Node test runner + `tsx` ^4.23.15 | — |
 
 No Firebase, Stripe, or `NEXT_PUBLIC_` secrets. Model id stays `gpt-4.1`.
 
@@ -62,7 +62,7 @@ roadmap.md
 
 ### Prerequisites
 
-- Node.js 22 (matches CI)
+- Node.js 24 (matches CI)
 - npm
 
 ### Clone and install
@@ -114,7 +114,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Tests live next to the modules they cover (`src/**/*.test.ts`): puzzle rules, answer tokens, rate limits, daily cache dedupe, streaks, stats sanitizing, security headers, route checks, and guess feedback.
 
-CI (`.github/workflows/ci.yml`) on `dev` and `main`: `npm ci --ignore-scripts`, lint, typecheck, test, then `npm run build` with no secrets. Node 22.
+CI (`.github/workflows/ci.yml`) on `dev` and `main`: `npm ci --ignore-scripts`, lint, typecheck, test, then `npm run build` with no secrets. Node 24.
 
 ## Deployment
 
