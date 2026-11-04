@@ -21,13 +21,13 @@ A Quartiles-style word puzzle. Combine letter tiles into words, find all five fo
 
 | Area | Choice | Version (`package.json`) |
 | --- | --- | --- |
-| Framework | Next.js (App Router) | ^16.4.3 |
+| Framework | Next.js (App Router) | ^16.4.5 |
 | UI | React | ^19.3.1 |
 | Language | TypeScript | ^6.0.3 |
-| Styling | Tailwind CSS + animate plugin | ^4.3.3 |
-| UI primitives | Radix Slot/Toast, CVA, Lucide | Lucide ^1.66.0 |
+| Styling | Tailwind CSS + animate plugin | ^4.3.4 |
+| UI primitives | Radix Slot/Toast, CVA, Lucide | Lucide ^1.68.0 |
 | State | Zustand | ^5.0.16 |
-| AI | Vercel AI SDK + `@ai-sdk/openai` | ai ^7.0.159, `@ai-sdk/openai` ^4.0.106 |
+| AI | Vercel AI SDK + `@ai-sdk/openai` | ai ^7.0.162, `@ai-sdk/openai` ^4.0.108 |
 | Validation helper | Zod | ^4.6.7 |
 | Lint / test | ESLint ^10.14.0, Node test runner + `tsx` ^4.23.15 | — |
 

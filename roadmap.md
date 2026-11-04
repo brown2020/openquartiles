@@ -8,10 +8,9 @@ Punchlist after the maintenance pass on `dev`. No open GitHub issues or pull req
 2. Promote `dev` to `main` only after QA. This pass does not promote.
 3. Confirm the live daily board is the same for two browsers on the same UTC date (Next data cache plus the in-process single-flight).
 4. Move rate limits off the process map so a second serverless instance cannot reset the budget. A shared store (Vercel KV or similar) is the follow-up. Do not add it until a store is chosen.
-5. Upgrade TypeScript to 7.0.2 when `typescript-eslint` accepts it. Rechecked with this dependency refresh: the latest stable `typescript-eslint` (8.72.1, including 8.72.2-alpha.4) still peers `typescript` `<6.1.0`, so 7.0.2 is not feasible yet. Stay on TypeScript 6.0.3.
-6. Replace the Google Fonts `<link>` in `src/app/layout.tsx` with a working `next/font` setup so the `no-page-custom-font` ESLint warning goes away. An earlier Turbopack font attempt was reverted; retry only when that path builds.
-7. Either use Zod on the model JSON or drop the unused `zod` dependency. The toast hook is also unused by the game.
-8. Correct the how-to-play goal sentence. It says finding five Quartiles reaches Expert. Genius still requires five Quartiles and a score of at least 100. Five Quartiles alone score 80 (Expert).
+5. Upgrade TypeScript to 7.0.2 when `typescript-eslint` accepts it. Rechecked with this dependency refresh: the latest stable `typescript-eslint` (8.72.1, including 8.72.2-alpha.4) still peers `typescript` `<6.1.0`, so 7.0.2 is not feasible yet. Stay on TypeScript 6.0.3. Keep `@types/node` on 24.x (currently 24.19.2) so the types match the Node 24 runtime; 26.6.6 is newer but describes a different Node.
+6. Either use Zod on the model JSON or drop the unused `zod` dependency. The toast hook is also unused by the game.
+7. Correct the how-to-play goal sentence. It says finding five Quartiles reaches Expert. Genius still requires five Quartiles and a score of at least 100. Five Quartiles alone score 80 (Expert).
 
 ## Known limitations
 

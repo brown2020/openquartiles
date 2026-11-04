@@ -1,7 +1,7 @@
 /**
  * Response headers applied to every route.
  * script/style 'unsafe-inline' matches Next.js hydration and Tailwind.
- * Google Fonts are loaded from the root layout.
+ * Fonts are self-hosted by next/font, so no third-party font host is required.
  */
 export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
@@ -10,8 +10,8 @@ export const CONTENT_SECURITY_POLICY = [
   "frame-ancestors 'none'",
   "object-src 'none'",
   "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
   "img-src 'self' data: blob:",
   "connect-src 'self'",
 ].join("; ");
